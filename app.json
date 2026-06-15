@@ -1,17 +1,11 @@
 {
   "expo": {
-    "name": "Sairam Sync",
-    "slug": "sairam-sync",
+    "name": "Sairam Hub",
+    "slug": "sairam-hub",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/app_icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
-    "splash": {
-      "image": "./assets/images/app_logo.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#F8FAFC"
-    },
     "ios": {
       "supportsTablet": true
     },
@@ -27,7 +21,16 @@
       "bundler": "metro"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/app_logo.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#F8FAFC"
+        }
+      ],
+      "expo-audio"
     ],
     "experiments": {
       "typedRoutes": true
@@ -35,7 +38,7 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "0c114db6-8815-4a4b-bab3-6b44ba965b55"
+        "projectId": "baac87c9-703e-4612-9608-198a1f5f5ad2"
       }
     },
     "owner": "dhivakar2005"

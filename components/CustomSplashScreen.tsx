@@ -1,14 +1,6 @@
-import React, { useEffect } from 'react';
-import { StyleSheet, Dimensions } from 'react-native';
-import Animated, { 
-  useSharedValue, 
-  useAnimatedStyle, 
-  withTiming, 
-  withDelay, 
-  runOnJS,
-  withSpring
-} from 'react-native-reanimated';
-import { Audio } from 'expo-av';
+import React, { useEffect, useRef } from 'react';
+import { StyleSheet, Dimensions, Animated } from 'react-native';
+import { useAudioPlayer } from 'expo-audio';
 import * as SplashScreen from 'expo-splash-screen';
 import { COLORS } from '../constants/theme';
 
@@ -17,65 +9,77 @@ const { width, height } = Dimensions.get('window');
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 export default function CustomSplashScreen({ onFinish }: { onFinish: () => void }) {
-  // Shared values
-  const logoScale = useSharedValue(0.1);
-  const logoOpacity = useSharedValue(0);
-  const textOpacity = useSharedValue(0);
-  const screenOpacity = useSharedValue(1);
+  const player = useAudioPlayer(require('../assets/sounds/startup.wav'));
+
+  // Animated values
+  const logoScale = useRef(new Animated.Value(0.1)).current;
+  const logoOpacity = useRef(new Animated.Value(0)).current;
+  const textOpacity = useRef(new Animated.Value(0)).current;
+  const screenOpacity = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     async function prepareAndAnimate() {
-      let soundObject: Audio.Sound | null = null;
-      try {
-        const { sound } = await Audio.Sound.createAsync(require('../assets/sounds/startup.wav'));
-        soundObject = sound;
-      } catch (audioErr) {
-        console.warn('Audio failed to load:', audioErr);
-      }
+      await SplashScreen.hideAsync().catch(() => {});
 
-      await SplashScreen.hideAsync();
+      // Play sound
+      setTimeout(() => {
+        try {
+          player.play();
+        } catch (e) {
+          console.warn('Sound failed to play:', e);
+        }
+      }, 100);
 
-      // --- Simple Logo Pulse ---
-      // Logo springs in at 100ms
-      logoOpacity.value = withDelay(100, withTiming(1, { duration: 300 }));
-      logoScale.value = withDelay(100, withSpring(1.2, { damping: 10, stiffness: 100, mass: 1 }));
-
-      if (soundObject) {
-        setTimeout(async () => {
-          try {
-            await soundObject?.playAsync();
-          } catch (e) {}
-        }, 100);
-      }
-
-      // Text fades in at 600ms
-      textOpacity.value = withDelay(600, withTiming(1, { duration: 500 }));
-
-      // Fade out entirely at 2000ms (keeps it under 2.5 seconds total)
-      screenOpacity.value = withDelay(2000, withTiming(0, { duration: 400 }, (finished) => {
-        if (finished) runOnJS(onFinish)();
-      }));
-
-      if (soundObject) {
-        setTimeout(() => soundObject?.unloadAsync(), 3000);
-      }
+      // Run animations
+      Animated.parallel([
+        Animated.sequence([
+          Animated.delay(100),
+          Animated.parallel([
+            Animated.spring(logoScale, {
+              toValue: 1.2,
+              friction: 4,
+              tension: 40,
+              useNativeDriver: true,
+            }),
+            Animated.timing(logoOpacity, {
+              toValue: 1,
+              duration: 300,
+              useNativeDriver: true,
+            })
+          ])
+        ]),
+        Animated.sequence([
+          Animated.delay(600),
+          Animated.timing(textOpacity, {
+            toValue: 1,
+            duration: 500,
+            useNativeDriver: true,
+          })
+        ]),
+        Animated.sequence([
+          Animated.delay(2000),
+          Animated.timing(screenOpacity, {
+            toValue: 0,
+            duration: 400,
+            useNativeDriver: true,
+          })
+        ])
+      ]).start((result) => {
+        if (result.finished) {
+          onFinish();
+        }
+      });
     }
+
     prepareAndAnimate();
   }, []);
 
-  // Animated Styles
-  const bgStyle = useAnimatedStyle(() => ({ opacity: screenOpacity.value }));
-  const logoStyle = useAnimatedStyle(() => ({ opacity: logoOpacity.value, transform: [{ scale: logoScale.value }] }));
-  const textStyle = useAnimatedStyle(() => ({ opacity: textOpacity.value }));
-
   return (
-    <Animated.View style={[styles.container, bgStyle]}>
-      {/* Just the Logo */}
-      <Animated.View style={[styles.logoContainer, logoStyle]}>
+    <Animated.View style={[styles.container, { opacity: screenOpacity }]}>
+      <Animated.View style={[styles.logoContainer, { opacity: logoOpacity, transform: [{ scale: logoScale }] }]}>
         <Animated.Image source={require('../assets/images/app_logo.png')} style={styles.logoImage} resizeMode="contain" />
       </Animated.View>
-
-      <Animated.Text style={[styles.tagline, textStyle]}>Learn • Share • Succeed</Animated.Text>
+      <Animated.Text style={[styles.tagline, { opacity: textOpacity }]}>Learn • Share • Succeed</Animated.Text>
     </Animated.View>
   );
 }

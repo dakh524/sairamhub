@@ -49,7 +49,7 @@ export default function UpdatesScreen() {
 
   const handleShareAnnouncement = async (item: Announcement) => {
     try {
-      const message = `📢 *Sairam Sync Update*\n\n*${item.title}*\n📅 Date: ${item.date}\n📍 Venue: ${item.venue}\n\n${item.details || item.desc}\n\nShared via Sairam Sync App.`;
+      const message = `📢 *Sairam Hub Update*\n\n*${item.title}*\n📅 Date: ${item.date}\n📍 Venue: ${item.venue}\n\n${item.details || item.desc}\n\nShared via Sairam Hub App.`;
       await Share.share({ message });
     } catch (error: any) {
       Alert.alert('Error', error.message);

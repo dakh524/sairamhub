@@ -17,7 +17,7 @@ export default function StopwatchScreen() {
   const [isRunning, setIsRunning] = useState(false);
   const [laps, setLaps] = useState<number[]>([]);
   
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<any | null>(null);
   const startTimeRef = useRef<number>(0);
   const accumulatedTimeRef = useRef<number>(0);
 
@@ -84,7 +84,7 @@ export default function StopwatchScreen() {
         {/* TIMER DISPLAY */}
         <View style={styles.timerCircle}>
           <View style={styles.timerInnerCircle}>
-            <Text style={styles.timerText} fontVariant={['tabular-nums']}>
+            <Text style={[styles.timerText, { fontVariant: ['tabular-nums'] }]}>
               {m}:{s}<Text style={styles.msText}>.{ms}</Text>
             </Text>
           </View>
@@ -119,7 +119,7 @@ export default function StopwatchScreen() {
             return (
               <View key={index} style={styles.lapRow}>
                 <Text style={styles.lapIndex}>Lap {laps.length - index}</Text>
-                <Text style={styles.lapTime} fontVariant={['tabular-nums']}>
+                <Text style={[styles.lapTime, { fontVariant: ['tabular-nums'] }]}>
                   {formatted.m}:{formatted.s}.{formatted.ms}
                 </Text>
               </View>

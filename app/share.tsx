@@ -11,10 +11,12 @@ import {
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '../constants/theme';
+import { submitSharedMaterial } from '../helpers/sheets';
 
 export default function ShareScreen() {
   const router = useRouter();
   const [name, setName] = useState('');
+  const [gmail, setGmail] = useState('');
   const [dept, setDept] = useState('');
   const [year, setYear] = useState('');
   const [sem, setSem] = useState('');
@@ -26,22 +28,43 @@ export default function ShareScreen() {
 
   const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = () => {
-    if (!name || !dept || !year || !sem || !subject || !level || !type || !title || !link) {
+  const handleSubmit = async () => {
+    if (!name || !gmail || !dept || !year || !sem || !subject || !level || !type || !title || !link) {
       Alert.alert('Validation Error', 'Please fill in all required fields.');
       return;
     }
 
     setSubmitting(true);
-    // Simulate sending to Google Form API
-    setTimeout(() => {
-      setSubmitting(false);
+    try {
+      const success = await submitSharedMaterial({
+        name,
+        dept,
+        year,
+        sem,
+        subject,
+        type,
+        title,
+        link,
+        email: gmail,
+      });
+
+      if (success) {
+        Alert.alert(
+          'Submission Success',
+          'Thank you! Your contributed material has been submitted for approval.',
+          [{ text: 'OK', onPress: () => router.canGoBack() ? router.back() : router.replace('/') }]
+        );
+      } else {
+        throw new Error('Submission endpoint did not return success.');
+      }
+    } catch (error: any) {
       Alert.alert(
-        'Submission Success',
-        'Thank you! Your contributed material has been submitted for approval.',
-        [{ text: 'OK', onPress: () => router.canGoBack() ? router.back() : router.replace('/') }]
+        'Submission Failed',
+        error.message || 'An error occurred while submitting. Please verify your connection.'
       );
-    }, 1500);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -72,6 +95,17 @@ export default function ShareScreen() {
             placeholderTextColor={COLORS.textSecondary}
             value={name}
             onChangeText={setName}
+          />
+
+          <Text style={styles.label}>Gmail ID *</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="e.g. arjun@gmail.com"
+            placeholderTextColor={COLORS.textSecondary}
+            value={gmail}
+            onChangeText={setGmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
           />
 
           <Text style={styles.label}>Department *</Text>

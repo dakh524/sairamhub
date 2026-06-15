@@ -4,6 +4,10 @@ import { Material } from '../types/material';
 const SHEET_ID = process.env.EXPO_PUBLIC_SHEET_ID || '1R0-BcZKHChSXEJTklyxAwntz69dxitRSQDuzBFaQzq4';
 const API_KEY = process.env.EXPO_PUBLIC_SHEETS_API_KEY || 'AIzaSyCExE7m5_M_wfptUe-3TiJb3OysGNlFbUc';
 
+if (!process.env.EXPO_PUBLIC_SHEET_ID || !process.env.EXPO_PUBLIC_SHEETS_API_KEY) {
+  console.warn('Warning: EXPO_PUBLIC_SHEET_ID or EXPO_PUBLIC_SHEETS_API_KEY is not defined in environment variables. Using hardcoded fallback values.');
+}
+
 // In-memory cache
 let cachedMaterials: Material[] | null = null;
 let cacheExpiry: number = 0;
@@ -122,10 +126,46 @@ export async function fetchAnnouncements(): Promise<any[]> {
       link: row[2] ? String(row[2]).trim() : '',
       date: row[3] ? String(row[3]).trim() : 'Today',
       type: 'announcements',
-      venue: 'Sairam Sync',
+      venue: 'Sairam Hub',
     })).filter((a: any) => a.title !== '');
   } catch (error) {
     console.error('Error fetching announcements from database:', error);
     throw new Error('Database Error');
   }
 }
+
+/**
+ * Submit shared material to Google Sheet via Google Apps Script Web App.
+ */
+export async function submitSharedMaterial(data: {
+  name: string;
+  dept: string;
+  year: string;
+  sem: string;
+  subject: string;
+  type: string;
+  title: string;
+  link: string;
+  email: string;
+}): Promise<boolean> {
+  const url = process.env.EXPO_PUBLIC_SUBMIT_URL || '';
+  if (!url) {
+    console.warn('Warning: EXPO_PUBLIC_SUBMIT_URL is not defined in environment variables. Submission will fail.');
+    throw new Error('Submission URL not configured. Please set EXPO_PUBLIC_SUBMIT_URL in .env');
+  }
+
+  try {
+    const response = await axios.post(url, data, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      timeout: 15000,
+    });
+    
+    return response.data && response.data.status === 'success';
+  } catch (error: any) {
+    console.error('Error submitting material:', error);
+    throw new Error(error.response?.data?.message || error.message || 'Submission failed');
+  }
+}
+

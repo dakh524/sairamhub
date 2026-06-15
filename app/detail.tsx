@@ -46,7 +46,7 @@ export default function DetailScreen() {
 
   const handleShare = async () => {
     try {
-      const message = `Check out this study material: *${material.title}* (${material.material_type}) for ${material.subject} (${material.dept} - Sem ${material.sem}) on Sairam Sync!\n\nLink: ${material.drive_link}`;
+      const message = `Check out this study material: *${material.title}* (${material.material_type}) for ${material.subject} (${material.dept} - Sem ${material.sem}) on Sairam Hub!\n\nLink: ${material.drive_link}`;
       await Share.share({
         message,
       });

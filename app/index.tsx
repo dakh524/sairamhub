@@ -19,12 +19,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
-import Animated, { useSharedValue, useAnimatedStyle, withTiming, withSpring, withRepeat, withSequence, Easing } from 'react-native-reanimated';
 import ConfettiCannon from 'react-native-confetti-cannon';
 import { COLORS } from '../constants/theme';
-
-const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
-const AnimatedIonicons = Animated.createAnimatedComponent(Ionicons);
 
 // Removed Image.resolveAssetSource due to React Native Web incompatibility
 
@@ -66,14 +62,6 @@ export default function MainApp() {
   const [serverError, setServerError] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
 
-  // Animation values
-  const searchScale = useSharedValue(1);
-  const searchRotation = useSharedValue(0);
-  const fabPulseScale = useSharedValue(1);
-  const fabPressScale = useSharedValue(1);
-  const floatY = useSharedValue(0);
-  const liveDotPulseScale = useSharedValue(1);
-  
   // Confetti ref
   const confettiRef = React.useRef<ConfettiCannon>(null);
 
@@ -83,7 +71,7 @@ export default function MainApp() {
   const [nextPeriod, setNextPeriod] = useState<any>(null);
   const [timeLeftStr, setTimeLeftStr] = useState<string>('--m --s left');
   const [scheduleStatus, setScheduleStatus] = useState<string>('Loading...');
-  const bellProgressWidth = useSharedValue(0);
+  const [bellProgressPct, setBellProgressPct] = useState(0);
   const [isManageModalVisible, setIsManageModalVisible] = useState(false);
   const [newPeriod, setNewPeriod] = useState({ name: '', startH: '', startM: '', endH: '', endM: '' });
 
@@ -155,7 +143,7 @@ export default function MainApp() {
           const totalDurationSecs = (endTotalMins - startTotalMins) * 60;
           const elapsedSecs = ((currentMinutes - startTotalMins) * 60) + currentSeconds;
           const pct = Math.min(100, Math.max(0, (elapsedSecs / totalDurationSecs) * 100));
-          bellProgressWidth.value = withTiming(pct, { duration: 1000 });
+          setBellProgressPct(pct);
 
           // Calculate time left
           const remainingSecs = totalDurationSecs - elapsedSecs;
@@ -184,12 +172,12 @@ export default function MainApp() {
         setNextPeriod(foundNext);
         setTimeLeftStr('--m --s');
         setScheduleStatus('Before College');
-        bellProgressWidth.value = withTiming(0);
+        setBellProgressPct(0);
       } else if (!foundCurrent && !foundNext) {
         setNextPeriod({ name: 'Tomorrow' });
         setTimeLeftStr('--m --s');
         setScheduleStatus('After College');
-        bellProgressWidth.value = withTiming(100);
+        setBellProgressPct(100);
       } else {
         setNextPeriod(foundNext);
       }
@@ -200,86 +188,18 @@ export default function MainApp() {
     return () => clearInterval(interval);
   }, [bellSchedule]);
 
-  useEffect(() => {
-    floatY.value = withRepeat(
-      withSequence(
-        withTiming(-15, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
-        withTiming(0, { duration: 1500, easing: Easing.inOut(Easing.ease) })
-      ),
-      -1,
-      true
-    );
-
-    fabPulseScale.value = withRepeat(
-      withSequence(
-        withTiming(1.3, { duration: 2000, easing: Easing.out(Easing.ease) }),
-        withTiming(1, { duration: 2000, easing: Easing.in(Easing.ease) })
-      ),
-      -1,
-      true
-    );
-
-    liveDotPulseScale.value = withRepeat(
-      withSequence(
-        withTiming(1.5, { duration: 800, easing: Easing.inOut(Easing.ease) }),
-        withTiming(1, { duration: 800, easing: Easing.inOut(Easing.ease) })
-      ),
-      -1,
-      true
-    );
-  }, []);
-
-  const searchAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: searchScale.value }],
-  }));
-
-  const searchIconAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ rotate: `${searchRotation.value}deg` }],
-  }));
-
-  const floatAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: floatY.value }],
-  }));
-
-  const fabPulseStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: fabPulseScale.value }],
-    opacity: withTiming(fabPulseScale.value > 1.1 ? 0 : 0.6, { duration: 1000 }),
-  }));
-
-  const fabPressStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: fabPressScale.value }],
-  }));
-
-  const bellProgressStyle = useAnimatedStyle(() => ({
-    width: `${bellProgressWidth.value}%`,
-  }));
-
-  const liveDotStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: liveDotPulseScale.value }],
-    opacity: withTiming(liveDotPulseScale.value > 1.2 ? 0.3 : 1, { duration: 400 }),
-  }));
-
   const TabItem = ({ label, tabName, iconName }: any) => {
     const isActive = activeTab === tabName;
-    const scale = useSharedValue(isActive ? 1.2 : 1);
-
-    useEffect(() => {
-      scale.value = withSpring(isActive ? 1.2 : 1);
-    }, [isActive]);
-
-    const animatedIconStyle = useAnimatedStyle(() => ({
-      transform: [{ scale: scale.value }],
-    }));
 
     return (
       <TouchableOpacity style={styles.tabItem} onPress={() => setActiveTab(tabName as any)}>
-        <Animated.View style={animatedIconStyle}>
+        <View>
           <Ionicons
             name={isActive ? iconName : `${iconName}-outline`}
             size={22}
             color={isActive ? COLORS.primary : COLORS.textSecondary}
           />
-        </Animated.View>
+        </View>
         <Text style={[styles.tabItemText, isActive && styles.tabItemTextActive]}>{label}</Text>
       </TouchableOpacity>
     );
@@ -332,7 +252,7 @@ export default function MainApp() {
 
   const handleShareAnnouncement = async (item: any) => {
     try {
-      const message = `📢 *Sairam Sync Update*\n\n*${item.title}*\n📅 Date: ${item.date}\n📍 Venue: ${item.venue}\n\n${item.details || item.desc}\n\nShared via Sairam Sync App.`;
+      const message = `📢 *Sairam Hub Update*\n\n*${item.title}*\n📅 Date: ${item.date}\n📍 Venue: ${item.venue}\n\n${item.details || item.desc}\n\nShared via Sairam Hub App.`;
       await Share.share({ message });
     } catch (error: any) {
       Alert.alert('Error', error.message);
@@ -361,7 +281,7 @@ export default function MainApp() {
         }
         
         if (prevMatsCount !== null && mats.length > parseInt(prevMatsCount, 10)) {
-          scheduleLocalNotification('📚 New Study Material!', 'Fresh notes have just been uploaded to Sairam Sync.');
+          scheduleLocalNotification('📚 New Study Material!', 'Fresh notes have just been uploaded to Sairam Hub.');
         }
 
         await AsyncStorage.setItem('anns_count', anns.length.toString());
@@ -438,27 +358,19 @@ export default function MainApp() {
 
 
                 {/* SEARCH BAR */}
-                <AnimatedTouchableOpacity
-                  style={[styles.searchBarContainer, searchAnimatedStyle]}
+                <TouchableOpacity
+                  style={styles.searchBarContainer}
                   onPress={() => router.push('/search')}
-                  onPressIn={() => {
-                    searchScale.value = withSpring(1.03);
-                    searchRotation.value = withSpring(15);
-                  }}
-                  onPressOut={() => {
-                    searchScale.value = withSpring(1);
-                    searchRotation.value = withSpring(0);
-                  }}
                   activeOpacity={0.9}
                 >
                   <Text style={styles.searchPlaceholder}>Search subjects, materials, PYQ, etc...</Text>
-                  <Animated.View style={searchIconAnimatedStyle}>
+                  <View>
                     <Ionicons name="search-outline" size={18} color={COLORS.textSecondary} />
-                  </Animated.View>
-                </AnimatedTouchableOpacity>
+                  </View>
+                </TouchableOpacity>
 
                 {/* HERO BANNER */}
-                <View style={[styles.heroCard, { padding: 0, borderWidth: 0, overflow: 'hidden', aspectRatio: 2.6 }]}>
+                <View style={[styles.heroCard, { padding: 0, borderWidth: 0, overflow: 'hidden', aspectRatio: width < 600 ? 2.0 : 2.6 }]}>
                   <Image 
                     source={require('../assets/images/hero_banner.jpg')} 
                     style={{ width: '100%', height: '100%', resizeMode: 'cover' }} 
@@ -809,7 +721,7 @@ export default function MainApp() {
                       </TouchableOpacity>
                     </View>
                     <View style={styles.liveBadge}>
-                      <Animated.View style={[styles.liveDot, liveDotStyle]} />
+                      <View style={styles.liveDot} />
                       <Text style={styles.liveText}>LIVE</Text>
                     </View>
                   </View>
@@ -823,9 +735,9 @@ export default function MainApp() {
                     </View>
                     
                     <View style={{ flex: 1.5, alignItems: 'center', justifyContent: 'center' }}>
-                      <Animated.Text style={[styles.bellTimeLeft, liveDotStyle, { fontSize: 24, color: '#EF4444', fontWeight: '900', textAlign: 'center' }]}>
+                      <Text style={[styles.bellTimeLeft, { fontSize: 24, color: '#EF4444', fontWeight: '900', textAlign: 'center' }]}>
                         {timeLeftStr}
-                      </Animated.Text>
+                      </Text>
                     </View>
 
                     <View style={styles.bellNextBox}>
@@ -842,7 +754,7 @@ export default function MainApp() {
                   </View>
 
                   <View style={styles.bellProgressBarContainer}>
-                    <Animated.View style={[styles.bellProgressFill, bellProgressStyle]} />
+                    <View style={[styles.bellProgressFill, { width: `${bellProgressPct}%` }]} />
                   </View>
                 </View>
 
@@ -1050,21 +962,14 @@ export default function MainApp() {
       </Modal>
 
       {/* FLOATING ACTION BUTTON */}
-      <Animated.View style={[styles.fab, styles.fabPulse, fabPulseStyle]} pointerEvents="none" />
-      <AnimatedTouchableOpacity
-        style={[styles.fab, fabPressStyle]}
+      <TouchableOpacity
+        style={styles.fab}
         onPress={() => router.push('/share')}
-        onPressIn={() => {
-          fabPressScale.value = withTiming(0.95, { duration: 100 });
-        }}
-        onPressOut={() => {
-          fabPressScale.value = withTiming(1, { duration: 100 });
-        }}
         activeOpacity={0.85}
       >
         <Ionicons name="add" size={20} color={COLORS.white} style={{ marginRight: 6 }} />
         <Text style={styles.fabLabel}>Share Material</Text>
-      </AnimatedTouchableOpacity>
+      </TouchableOpacity>
 
       {/* BOTTOM TAB BAR */}
       <View style={styles.tabBar}>

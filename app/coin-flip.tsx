@@ -1,22 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   StyleSheet,
   Text,
   View,
   TouchableOpacity,
+  Animated,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/theme';
-import Animated, { 
-  useSharedValue, 
-  useAnimatedStyle, 
-  withTiming, 
-  withSequence,
-  withRepeat,
-  Easing
-} from 'react-native-reanimated';
 
 export default function CoinFlipScreen() {
   const router = useRouter();
@@ -24,7 +17,8 @@ export default function CoinFlipScreen() {
   const [result, setResult] = useState<string | null>(null);
   const [isFlipping, setIsFlipping] = useState(false);
   
-  const rotation = useSharedValue(0);
+  const rotation = useRef(new Animated.Value(0)).current;
+  const currentRotation = useRef(0);
 
   const flipCoin = () => {
     if (isFlipping) return;
@@ -35,18 +29,24 @@ export default function CoinFlipScreen() {
     const isHeads = Math.random() > 0.5;
     
     // Animate: spin 5 full times (5 * 360 = 1800) + extra 180 if tails
-    const targetRotation = rotation.value + 1800 + (isHeads ? 0 : 180);
+    const targetRotation = currentRotation.current + 1800 + (isHeads ? 0 : 180);
 
-    rotation.value = withSequence(
+    Animated.sequence([
       // Wind up
-      withTiming(rotation.value - 45, { duration: 300, easing: Easing.out(Easing.ease) }),
+      Animated.timing(rotation, {
+        toValue: currentRotation.current - 45,
+        duration: 300,
+        useNativeDriver: true,
+      }),
       // Fast flips
-      withTiming(targetRotation, { duration: 2000, easing: Easing.inOut(Easing.ease) }, (finished) => {
-        if (finished) {
-          // Callback after animation
-        }
+      Animated.timing(rotation, {
+        toValue: targetRotation,
+        duration: 2000,
+        useNativeDriver: true,
       })
-    );
+    ]).start(() => {
+      currentRotation.current = targetRotation;
+    });
 
     // Set result right after animation ends
     setTimeout(() => {
@@ -55,31 +55,49 @@ export default function CoinFlipScreen() {
     }, 2400);
   };
 
-  const animatedStyle = useAnimatedStyle(() => {
-    return {
-      transform: [
-        { rotateX: `${rotation.value}deg` }
-      ],
-    };
+  // Interpolate rotation for rotateX style
+  const rotateX = rotation.interpolate({
+    inputRange: [0, 360000],
+    outputRange: ['0deg', '360000deg']
   });
 
-  // Calculate which side is showing based on current rotation to show Heads or Tails face
-  // This is a simple trick: if we rotate around X, when angle is between 90 and 270 (mod 360), back is visible.
-  const animatedFrontStyle = useAnimatedStyle(() => {
-    const r = rotation.value % 360;
-    const isBack = r > 90 && r < 270;
-    return {
-      opacity: isBack ? 0 : 1,
-    };
+  // Calculate front and back visibility dynamically based on rotation
+  const frontOpacity = rotation.interpolate({
+    inputRange: (() => {
+      const range = [];
+      for (let i = 0; i <= 1000; i++) {
+        const base = i * 360;
+        range.push(base, base + 90, base + 270, base + 360);
+      }
+      return range;
+    })(),
+    outputRange: (() => {
+      const range = [];
+      for (let i = 0; i <= 1000; i++) {
+        range.push(1, 0, 0, 1);
+      }
+      return range;
+    })(),
+    extrapolate: 'clamp'
   });
 
-  const animatedBackStyle = useAnimatedStyle(() => {
-    const r = rotation.value % 360;
-    const isBack = r > 90 && r < 270;
-    return {
-      opacity: isBack ? 1 : 0,
-      transform: [{ rotateX: '180deg' }] // Keep text upright on the back
-    };
+  const backOpacity = rotation.interpolate({
+    inputRange: (() => {
+      const range = [];
+      for (let i = 0; i <= 1000; i++) {
+        const base = i * 360;
+        range.push(base, base + 90, base + 270, base + 360);
+      }
+      return range;
+    })(),
+    outputRange: (() => {
+      const range = [];
+      for (let i = 0; i <= 1000; i++) {
+        range.push(0, 1, 1, 0);
+      }
+      return range;
+    })(),
+    extrapolate: 'clamp'
   });
 
   return (
@@ -102,14 +120,14 @@ export default function CoinFlipScreen() {
           activeOpacity={1}
           disabled={isFlipping}
         >
-          <Animated.View style={[styles.coin, animatedStyle]}>
+          <Animated.View style={[styles.coin, { transform: [{ rotateX }] }]}>
             {/* FRONT (HEADS) */}
-            <Animated.View style={[styles.coinFace, styles.coinFront, animatedFrontStyle]}>
+            <Animated.View style={[styles.coinFace, styles.coinFront, { opacity: frontOpacity }]}>
               <Text style={styles.coinText}>HEADS</Text>
             </Animated.View>
 
             {/* BACK (TAILS) */}
-            <Animated.View style={[styles.coinFace, styles.coinBack, animatedBackStyle]}>
+            <Animated.View style={[styles.coinFace, styles.coinBack, { opacity: backOpacity, transform: [{ rotateX: '180deg' }] }]}>
               <Text style={styles.coinText}>TAILS</Text>
             </Animated.View>
           </Animated.View>
@@ -173,7 +191,7 @@ const styles = StyleSheet.create({
     width: 250,
     height: 250,
     marginBottom: 60,
-    perspective: 1000,
+    perspective: 1000 as any,
   },
   coin: {
     width: '100%',
