@@ -460,7 +460,7 @@ export default function MainApp() {
                 {/* HERO BANNER */}
                 <View style={[styles.heroCard, { padding: 0, borderWidth: 0, overflow: 'hidden', aspectRatio: 2.6 }]}>
                   <Image 
-                    source={require('../assets/images/hero_banner.png')} 
+                    source={require('../assets/images/hero_banner.jpg')} 
                     style={{ width: '100%', height: '100%', resizeMode: 'cover' }} 
                   />
                 </View>
@@ -623,7 +623,7 @@ export default function MainApp() {
                 {/* MATERIALS BANNER */}
                 <View style={{ marginTop: 24, marginBottom: 90 }}>
                   <ImageBackground 
-                    source={require('../assets/images/materials_banner.png')} 
+                    source={require('../assets/images/materials_banner.jpg')} 
                     style={[styles.heroCard, { padding: 16, height: 130, borderWidth: 0, flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'center', marginBottom: 0 }]}
                     imageStyle={{ borderRadius: 16, resizeMode: 'cover' }}
                   >
