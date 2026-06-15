@@ -155,9 +155,9 @@ export async function submitSharedMaterial(data: {
   }
 
   try {
-    const response = await axios.post(url, data, {
+    const response = await axios.post(url, JSON.stringify(data), {
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'text/plain',
       },
       timeout: 15000,
     });
