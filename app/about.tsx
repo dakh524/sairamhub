@@ -119,6 +119,15 @@ export default function AboutScreen() {
           </Text>
         </View>
 
+        {/* ADMIN ACCESS BUTTON */}
+        <TouchableOpacity 
+          style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 16, marginTop: 10, opacity: 0.6 }}
+          onPress={() => router.push('/admin')}
+        >
+          <Ionicons name="lock-closed-outline" size={16} color={COLORS.textSecondary} style={{ marginRight: 6 }} />
+          <Text style={{ color: COLORS.textSecondary, fontSize: 13, fontWeight: 'bold' }}>Admin Access</Text>
+        </TouchableOpacity>
+
         {/* FOOTER TEXT */}
         <Text style={styles.footerText}>© 2026 Sairam Hub. All rights reserved.</Text>
 
