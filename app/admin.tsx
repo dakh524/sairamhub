@@ -234,8 +234,9 @@ export default function AdminScreen() {
       if (confirmed) {
         const success = await deleteAnnouncement(id);
         if (success) {
-          setTimeout(() => window.alert('Announcement deleted.'), 100);
+          await AsyncStorage.removeItem('local_announcements');
           fetchAdminAnns();
+          setTimeout(() => window.alert('Announcement deleted.'), 100);
         } else {
           setTimeout(() => window.alert('Failed to delete announcement.'), 100);
         }
@@ -246,8 +247,9 @@ export default function AdminScreen() {
         { text: 'Delete', style: 'destructive', onPress: async () => {
             const success = await deleteAnnouncement(id);
             if (success) {
-              Alert.alert('Success', 'Announcement deleted.');
+              await AsyncStorage.removeItem('local_announcements');
               fetchAdminAnns();
+              Alert.alert('Success', 'Announcement deleted.');
             } else {
               Alert.alert('Error', 'Failed to delete announcement.');
             }
@@ -269,11 +271,20 @@ export default function AdminScreen() {
 
     const success = await updateAnnouncement(editingAnn.id, updates);
     if (success) {
-      Alert.alert('Success', 'Announcement updated successfully.');
+      await AsyncStorage.removeItem('local_announcements');
       setEditingAnn(null);
       fetchAdminAnns();
+      if (Platform.OS === 'web') {
+        setTimeout(() => window.alert('Announcement updated successfully.'), 100);
+      } else {
+        Alert.alert('Success', 'Announcement updated successfully.');
+      }
     } else {
-      Alert.alert('Error', 'Failed to update announcement.');
+      if (Platform.OS === 'web') {
+        setTimeout(() => window.alert('Failed to update announcement.'), 100);
+      } else {
+        Alert.alert('Error', 'Failed to update announcement.');
+      }
     }
     setEditAnnSubmitting(false);
   };
