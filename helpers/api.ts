@@ -250,28 +250,7 @@ export async function submitSharedMaterial(data: {
       console.warn('AsyncStorage save error:', err);
     }
 
-    // 2. Immediately persist live notification entry locally
-    const newAnnouncement = {
-      id: 'local_' + Date.now(),
-      title: `📚 New Upload: ${data.title}`,
-      desc: `Shared by ${data.name} for ${subjectFormatted} (${deptUpper} - Sem ${semNormalized})`,
-      details: `Proud Sairam student ${data.name} shared new ${typeFormatted} ("${data.title}") for ${subjectFormatted} in ${deptUpper} Department, Semester ${semNormalized}.`,
-      link: data.link,
-      date: 'Just now',
-      type: 'announcements',
-      venue: 'Sairam Hub',
-    };
-
-    try {
-      const existingAnns = await AsyncStorage.getItem('local_announcements');
-      const annList = existingAnns ? JSON.parse(existingAnns) : [];
-      annList.unshift(newAnnouncement);
-      await AsyncStorage.setItem('local_announcements', JSON.stringify(annList));
-    } catch (err) {
-      console.warn('AsyncStorage announcement save error:', err);
-    }
-
-    // 3. Try inserting into Supabase shared_materials table
+    // 2. Try inserting into Supabase shared_materials table
     try {
       await supabase
         .from('shared_materials')
@@ -288,21 +267,6 @@ export async function submitSharedMaterial(data: {
         }]);
     } catch (sharedErr) {
       console.warn('shared_materials Supabase insert warning:', sharedErr);
-    }
-
-    // 4. Try inserting into Supabase announcements table
-    try {
-      await supabase
-        .from('announcements')
-        .insert([{
-          title: newAnnouncement.title,
-          desc: newAnnouncement.desc,
-          details: newAnnouncement.details,
-          link: data.link,
-          date: 'Just now'
-        }]);
-    } catch (annErr) {
-      console.warn('announcements Supabase insert notice:', annErr);
     }
     
     // Clear in-memory cache immediately

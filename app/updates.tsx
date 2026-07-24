@@ -23,6 +23,14 @@ export default function UpdatesScreen() {
   const [loading, setLoading] = useState<boolean>(true);
   const [expandedAnnouncementId, setExpandedAnnouncementId] = useState<string | null>(null);
   const [updateTab, setUpdateTab] = useState<'all' | 'announcements' | 'workshops'>('all');
+  const [reactions, setReactions] = useState<{[id: string]: string}>({});
+
+  const toggleReaction = (id: string, emoji: string) => {
+    setReactions(prev => ({
+      ...prev,
+      [id]: prev[id] === emoji ? '' : emoji
+    }));
+  };
 
   useEffect(() => {
     async function loadData() {
@@ -156,7 +164,7 @@ export default function UpdatesScreen() {
                     <Text style={[styles.announcementTitle, { fontSize: 17, fontWeight: '800', color: '#111827', marginTop: 8, marginBottom: 6 }]}>{item.title}</Text>
                     <Text style={[styles.announcementDesc, { fontSize: 14, color: '#4B5563', lineHeight: 22 }]}>{item.details || item.desc}</Text>
                     
-                    <View style={{ marginTop: 16, flexDirection: 'row', justifyContent: 'flex-start' }}>
+                    <View style={{ marginTop: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                       <TouchableOpacity
                         style={{
                           flexDirection: 'row',
@@ -171,6 +179,24 @@ export default function UpdatesScreen() {
                         <Ionicons name="share-social-outline" size={16} color={themeColor} style={{ marginRight: 6 }} />
                         <Text style={{ color: themeColor, fontWeight: '700', fontSize: 13 }}>Share Event</Text>
                       </TouchableOpacity>
+
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                        {['👍', '❤️', '🔥', '🎉'].map(emoji => (
+                          <TouchableOpacity 
+                            key={emoji}
+                            onPress={() => toggleReaction(item.id, emoji)}
+                            style={{
+                              backgroundColor: reactions[item.id] === emoji ? '#FEF2F2' : '#F3F4F6',
+                              padding: 6,
+                              borderRadius: 16,
+                              borderWidth: 1,
+                              borderColor: reactions[item.id] === emoji ? '#FCA5A5' : 'transparent',
+                            }}
+                          >
+                            <Text style={{ fontSize: 14 }}>{emoji}</Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
                     </View>
                   </View>
                 );
