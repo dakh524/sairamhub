@@ -107,9 +107,11 @@ export default function AdminScreen() {
 
   const fetchAdminAnns = async () => {
     setAnnsLoading(true);
-    const data = await fetchAnnouncements();
-    // Only show DB announcements (not local optimistic ones) to allow real editing
-    setAdminAnns(data.filter((a: any) => !String(a.id).startsWith('local_')));
+    // Fetch directly from DB to get the real UUIDs for editing/deleting
+    const { data } = await supabase.from('announcements').select('*').order('created_at', { ascending: false });
+    if (data) {
+      setAdminAnns(data);
+    }
     setAnnsLoading(false);
   };
 
