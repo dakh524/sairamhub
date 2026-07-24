@@ -22,7 +22,9 @@ export default function AdminScreen() {
 
   // Authentication State
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [passcode, setPasscode] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [authLoading, setAuthLoading] = useState(false);
 
   // Form State for Company Drive
   const [company, setCompany] = useState('');
@@ -32,14 +34,39 @@ export default function AdminScreen() {
   const [logoUrl, setLogoUrl] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  const handleLogin = () => {
-    // Basic hardcoded passcode for admin access
-    if (passcode === 'admin@123' || passcode === 'sairam2026') {
-      setIsAuthenticated(true);
-    } else {
-      Alert.alert('Access Denied', 'Incorrect admin passcode.');
-      setPasscode('');
+  const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert('Missing Fields', 'Please enter both email and password.');
+      return;
     }
+
+    setAuthLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password: password,
+      });
+
+      if (error) {
+        throw error;
+      }
+      
+      if (data.user) {
+        setIsAuthenticated(true);
+      }
+    } catch (err: any) {
+      console.error(err);
+      Alert.alert('Access Denied', err.message || 'Invalid email or password.');
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setIsAuthenticated(false);
+    setEmail('');
+    setPassword('');
   };
 
   const handleAddDrive = async () => {
@@ -99,22 +126,46 @@ export default function AdminScreen() {
             <Ionicons name="lock-closed" size={32} color="#FFFFFF" />
           </View>
           <Text style={styles.loginTitle}>Admin Restricted Area</Text>
-          <Text style={styles.loginSub}>Enter passcode to manage app content.</Text>
+          <Text style={styles.loginSub}>Login with your Supabase credentials.</Text>
 
-          <View style={styles.inputGroup}>
+          <View style={[styles.inputGroup, { width: '100%' }]}>
+            <Text style={styles.label}>Admin Email</Text>
             <TextInput
               style={styles.input}
-              placeholder="Enter Passcode"
+              placeholder="e.g. admin@sairam.edu.in"
               placeholderTextColor="#94A3B8"
-              secureTextEntry
-              value={passcode}
-              onChangeText={setPasscode}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              value={email}
+              onChangeText={setEmail}
             />
           </View>
 
-          <TouchableOpacity style={styles.loginBtn} onPress={handleLogin}>
-            <Text style={styles.loginBtnText}>Unlock Panel</Text>
-            <Ionicons name="key-outline" size={20} color="#FFFFFF" style={{ marginLeft: 8 }} />
+          <View style={[styles.inputGroup, { width: '100%', marginBottom: 32 }]}>
+            <Text style={styles.label}>Password</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter Password"
+              placeholderTextColor="#94A3B8"
+              secureTextEntry
+              value={password}
+              onChangeText={setPassword}
+            />
+          </View>
+
+          <TouchableOpacity 
+            style={styles.loginBtn} 
+            onPress={handleLogin}
+            disabled={authLoading}
+          >
+            {authLoading ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <>
+                <Text style={styles.loginBtnText}>Secure Login</Text>
+                <Ionicons name="log-in-outline" size={20} color="#FFFFFF" style={{ marginLeft: 8 }} />
+              </>
+            )}
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -130,7 +181,7 @@ export default function AdminScreen() {
           <Ionicons name="arrow-back" size={24} color={COLORS.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Admin Dashboard</Text>
-        <TouchableOpacity style={styles.backButton} onPress={() => setIsAuthenticated(false)}>
+        <TouchableOpacity style={styles.backButton} onPress={handleLogout}>
           <Ionicons name="log-out-outline" size={24} color="#EF4444" />
         </TouchableOpacity>
       </View>
