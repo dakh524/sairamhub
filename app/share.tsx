@@ -9,6 +9,8 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  Modal,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -37,6 +39,7 @@ export default function ShareScreen() {
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
 
   const [submitting, setSubmitting] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   useEffect(() => {
     // Auto-fill user details from AsyncStorage
@@ -52,15 +55,15 @@ export default function ShareScreen() {
         if (storedDept) setDept(storedDept);
         if (storedYear) setYear(storedYear);
       } catch (e) {
-        console.warn('Could not load user details', e);
+        console.error('Failed to fetch user details from storage', e);
       }
     };
     fetchUserDetails();
   }, []);
 
   const handleSubmit = async () => {
-    if (!name || !gmail || !dept || !year || !sem || !subject || !level || !type || !title || !link) {
-      Alert.alert('Validation Error', 'Please fill in all required fields.');
+    if (!name || !gmail || !dept || !year || !subject || !title || !link) {
+      Alert.alert('Missing Fields', 'Please fill out all required fields marked with *.');
       return;
     }
 
@@ -86,11 +89,7 @@ export default function ShareScreen() {
           `"${title}" for ${subject} (Sem ${sem}) is now available in Sairam Hub.`
         );
 
-        Alert.alert(
-          'Submission Success',
-          'You added study material for the students be proud of you!',
-          [{ text: 'OK', onPress: () => router.canGoBack() ? router.back() : router.replace('/') }]
-        );
+        setShowSuccessModal(true);
       } else {
         throw new Error('Submission endpoint did not return success.');
       }
@@ -301,11 +300,207 @@ export default function ShareScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* PROUD CONTRIBUTOR SUCCESS MODAL */}
+      <Modal
+        visible={showSuccessModal}
+        transparent={true}
+        animationType="fade"
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <View style={styles.modalHeaderBadge}>
+              <Text style={{ fontSize: 36 }}>🎓</Text>
+            </View>
+            
+            <Text style={styles.modalTitle}>Be Proud of Yourself, {name || 'Student'}! 🌟</Text>
+            
+            <Text style={styles.modalSubMessage}>
+              You contributed valuable study material that will help hundreds of students across Sairam Institutions!
+            </Text>
+
+            {/* AUTOMATIC ALLOCATION SUMMARY */}
+            <View style={styles.allocationSummaryBox}>
+              <Text style={styles.allocationHeaderTitle}>📍 Automatically Live & Allocated To:</Text>
+              
+              <View style={styles.allocationRow}>
+                <Ionicons name="school" size={16} color="#6B5DF6" />
+                <Text style={styles.allocationRowText}>Department: <Text style={{ fontWeight: 'bold', color: '#0F172A' }}>{dept.toUpperCase()}</Text></Text>
+              </View>
+              
+              <View style={styles.allocationRow}>
+                <Ionicons name="calendar" size={16} color="#6B5DF6" />
+                <Text style={styles.allocationRowText}>Semester: <Text style={{ fontWeight: 'bold', color: '#0F172A' }}>Semester {sem}</Text></Text>
+              </View>
+
+              <View style={styles.allocationRow}>
+                <Ionicons name="book" size={16} color="#6B5DF6" />
+                <Text style={styles.allocationRowText}>Subject: <Text style={{ fontWeight: 'bold', color: '#0F172A' }}>{subject}</Text></Text>
+              </View>
+
+              <View style={styles.allocationRow}>
+                <Ionicons name="document-text" size={16} color="#6B5DF6" />
+                <Text style={styles.allocationRowText}>Category: <Text style={{ fontWeight: 'bold', color: '#0F172A' }}>{type} ("{title}")</Text></Text>
+              </View>
+            </View>
+
+            <View style={styles.modalActionGroup}>
+              <TouchableOpacity
+                style={styles.primaryViewBtn}
+                onPress={() => {
+                  setShowSuccessModal(false);
+                  router.replace({
+                    pathname: '/resources',
+                    params: { sem, dept: dept.toUpperCase(), subject, type }
+                  });
+                }}
+              >
+                <Ionicons name="eye-outline" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
+                <Text style={styles.primaryViewBtnText}>View My Material Now</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.secondaryNotificationBtn}
+                onPress={() => {
+                  setShowSuccessModal(false);
+                  router.replace('/updates');
+                }}
+              >
+                <Ionicons name="notifications-outline" size={18} color="#6B5DF6" style={{ marginRight: 6 }} />
+                <Text style={styles.secondaryNotificationBtnText}>Check Notification Entry</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.homeBackBtn}
+                onPress={() => {
+                  setShowSuccessModal(false);
+                  router.replace('/');
+                }}
+              >
+                <Text style={styles.homeBackBtnText}>Back to Home</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.75)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalCard: {
+    width: '100%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 24,
+    alignItems: 'center',
+    shadowColor: '#6B5DF6',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.25,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  modalHeaderBadge: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: '#EEF2FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#0F172A',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  modalSubMessage: {
+    fontSize: 13,
+    color: '#475569',
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 18,
+  },
+  allocationSummaryBox: {
+    width: '100%',
+    backgroundColor: '#F8FAFC',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    marginBottom: 20,
+  },
+  allocationHeaderTitle: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#6B5DF6',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 12,
+  },
+  allocationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  allocationRowText: {
+    fontSize: 13,
+    color: '#334155',
+    marginLeft: 8,
+    flex: 1,
+  },
+  modalActionGroup: {
+    width: '100%',
+    gap: 10,
+  },
+  primaryViewBtn: {
+    backgroundColor: '#6B5DF6',
+    borderRadius: 14,
+    paddingVertical: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+  },
+  primaryViewBtnText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  secondaryNotificationBtn: {
+    backgroundColor: '#EEF2FF',
+    borderRadius: 14,
+    paddingVertical: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+  },
+  secondaryNotificationBtnText: {
+    color: '#6B5DF6',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  homeBackBtn: {
+    paddingVertical: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+  },
+  homeBackBtnText: {
+    color: '#64748B',
+    fontSize: 13,
+    fontWeight: '600',
+  },
   container: {
     flex: 1,
     backgroundColor: '#F4F6FF',

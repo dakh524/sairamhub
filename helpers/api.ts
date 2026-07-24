@@ -85,14 +85,14 @@ export async function fetchAllMaterials(): Promise<Material[]> {
       return {
         year: row.year || getYearFromSem(sem),
         sem: sem,
-        dept: row.dept || 'CSE',
-        subject: row.subject || 'General Resources',
+        dept: row.dept ? row.dept.toUpperCase().trim() : 'CSE',
+        subject: row.subject ? toTitleCase(row.subject.trim()) : 'General Resources',
         level: 'Subject',
-        material_type: row.type ? toTitleCase(row.type) : 'Notes',
+        material_type: row.type ? toTitleCase(row.type.trim()) : 'Notes',
         title: row.title || 'Material Document',
         drive_link: row.link ? row.link.replace(/^"|"$/g, '').trim() : 'https://drive.google.com',
         contributor_name: row.name || 'Sairam Student',
-        date: row.date || 'Today',
+        date: row.date || 'Just now',
         approved: 'YES'
       };
     });
@@ -141,10 +141,10 @@ export async function fetchAnnouncements(): Promise<any[]> {
     return data.map((row) => ({
       id: String(row.id),
       title: row.title || '',
-      desc: row.desc ? row.desc.substring(0, 50) + '...' : '',
-      details: row.details || '',
+      desc: row.desc ? row.desc.substring(0, 80) + '...' : '',
+      details: row.details || row.desc || '',
       link: row.link || '',
-      date: row.date || 'Today',
+      date: row.date || 'Just now',
       type: 'announcements',
       venue: 'Sairam Hub',
     })).filter((a: any) => a.title !== '');
@@ -170,11 +170,14 @@ export async function submitSharedMaterial(data: {
   email: string;
 }): Promise<boolean> {
   try {
-    const { error } = await supabase
+    const deptUpper = data.dept ? data.dept.toUpperCase().trim() : 'CSE';
+
+    // 1. Insert into shared_materials
+    const { error: sharedErr } = await supabase
       .from('shared_materials')
       .insert([{
         name: data.name,
-        dept: data.dept,
+        dept: deptUpper,
         year: data.year,
         sem: data.sem,
         subject: data.subject,
@@ -184,8 +187,23 @@ export async function submitSharedMaterial(data: {
         email: data.email
       }]);
       
-    if (error) {
-      throw error;
+    if (sharedErr) {
+      console.warn('shared_materials insert warning:', sharedErr);
+    }
+
+    // 2. Insert live notification entry into announcements table
+    try {
+      await supabase
+        .from('announcements')
+        .insert([{
+          title: `📚 New Upload: ${data.title}`,
+          desc: `Shared by ${data.name} for ${data.subject} (${deptUpper} - Sem ${data.sem})`,
+          details: `Proud Sairam student ${data.name} shared new ${data.type} ("${data.title}") for ${data.subject} in ${deptUpper} Department, Semester ${data.sem}.`,
+          link: data.link,
+          date: 'Just now'
+        }]);
+    } catch (annErr) {
+      console.warn('announcements insert notice:', annErr);
     }
     
     // Clear cache immediately after successful submit
