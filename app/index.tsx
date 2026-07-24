@@ -449,7 +449,10 @@ export default function MainApp() {
                     </Text>
                   </View>
                   <View style={styles.userAvatarBadgeGlow}>
-                    <Text style={styles.userAvatarText}>{userName.charAt(0).toUpperCase()}</Text>
+                    <Image 
+                      source={{ uri: `https://api.dicebear.com/7.x/avataaars/png?seed=${encodeURIComponent(userName)}&backgroundColor=b6e3f4` }} 
+                      style={{ width: '100%', height: '100%', borderRadius: 22 }} 
+                    />
                   </View>
                 </View>
 
@@ -1556,12 +1559,12 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#7C3AED',
+    backgroundColor: '#EEF2FF',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#C084FC',
-    shadowColor: '#7C3AED',
+    borderColor: '#818CF8',
+    shadowColor: '#4F46E5',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4,
     shadowRadius: 8,
