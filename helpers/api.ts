@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { Material } from '../types/material';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // In-memory cache
 let cachedMaterials: Material[] | null = null;
@@ -45,7 +46,7 @@ export function clearMaterialsCache() {
 }
 
 /**
- * Fetch all materials from Supabase (combines materials & shared_materials).
+ * Fetch all materials from Supabase and local storage fallback.
  */
 export async function fetchAllMaterials(): Promise<Material[]> {
   const now = Date.now();
@@ -54,7 +55,7 @@ export async function fetchAllMaterials(): Promise<Material[]> {
   }
 
   try {
-    // Query both tables in parallel
+    // Query both Supabase tables in parallel
     const [matsRes, sharedRes] = await Promise.all([
       supabase.from('materials').select('*'),
       supabase.from('shared_materials').select('*')
@@ -68,8 +69,8 @@ export async function fetchAllMaterials(): Promise<Material[]> {
       return {
         year: row.year || getYearFromSem(sem),
         sem: sem,
-        dept: row.dept || 'CSE',
-        subject: row.subject || 'General Resources',
+        dept: row.dept ? row.dept.toUpperCase().trim() : 'CSE',
+        subject: row.subject ? toTitleCase(row.subject.trim()) : 'General Resources',
         level: 'Subject',
         material_type: row.material_type ? toTitleCase(row.material_type) : (row.type ? toTitleCase(row.type) : 'Notes'),
         title: row.title || 'Material Document',
@@ -97,14 +98,52 @@ export async function fetchAllMaterials(): Promise<Material[]> {
       };
     });
 
-    const combined = [...materialsFromTable, ...materialsFromShared];
+    // Also fetch local user-submitted materials fallback from AsyncStorage
+    let localShared: Material[] = [];
+    try {
+      const rawLocal = await AsyncStorage.getItem('local_shared_materials');
+      if (rawLocal) {
+        const parsed = JSON.parse(rawLocal);
+        localShared = parsed.map((row: any) => {
+          const sem = normalizeSemester(row.sem);
+          return {
+            year: row.year || getYearFromSem(sem),
+            sem: sem,
+            dept: row.dept ? row.dept.toUpperCase().trim() : 'CSE',
+            subject: row.subject ? toTitleCase(row.subject.trim()) : 'General Resources',
+            level: 'Subject',
+            material_type: row.type ? toTitleCase(row.type.trim()) : 'Notes',
+            title: row.title || 'Material Document',
+            drive_link: row.link ? row.link.replace(/^"|"$/g, '').trim() : 'https://drive.google.com',
+            contributor_name: row.name || 'Sairam Student',
+            date: row.date || 'Just now',
+            approved: 'YES'
+          };
+        });
+      }
+    } catch (e) {
+      console.warn('Error reading local_shared_materials:', e);
+    }
+
+    // Merge and de-duplicate by title + drive_link + sem + dept
+    const rawCombined = [...materialsFromTable, ...materialsFromShared, ...localShared];
+    const uniqueMap = new Map<string, Material>();
+    
+    rawCombined.forEach(m => {
+      const key = `${m.dept.toUpperCase()}_${m.sem}_${m.subject.toLowerCase()}_${m.title.toLowerCase()}`;
+      if (!uniqueMap.has(key)) {
+        uniqueMap.set(key, m);
+      }
+    });
+
+    const combined = Array.from(uniqueMap.values());
 
     cachedMaterials = combined;
     cacheExpiry = now + CACHE_DURATION_MS;
 
     return combined;
   } catch (error) {
-    console.warn('Warning fetching materials from database:', error);
+    console.warn('Warning fetching materials:', error);
     return [];
   }
 }
@@ -120,7 +159,7 @@ export function getSubjectMaterials(
 ): Material[] {
   return data.filter(
     item =>
-      item.dept.toUpperCase() === dept.toUpperCase() &&
+      (item.dept.toUpperCase() === dept.toUpperCase() || item.dept.toUpperCase() === 'COMMON' || item.dept.toUpperCase() === 'ALL') &&
       String(item.sem) === String(sem) &&
       item.subject.toLowerCase() === subject.toLowerCase()
   );
@@ -132,13 +171,7 @@ export async function fetchAnnouncements(): Promise<any[]> {
       .from('announcements')
       .select('*');
 
-    if (error) {
-      throw error;
-    }
-
-    if (!data) return [];
-    
-    return data.map((row) => ({
+    const dbAnnouncements = (data || []).map((row) => ({
       id: String(row.id),
       title: row.title || '',
       desc: row.desc ? row.desc.substring(0, 80) + '...' : '',
@@ -148,14 +181,29 @@ export async function fetchAnnouncements(): Promise<any[]> {
       type: 'announcements',
       venue: 'Sairam Hub',
     })).filter((a: any) => a.title !== '');
+
+    let localAnnouncements: any[] = [];
+    try {
+      const rawLocal = await AsyncStorage.getItem('local_announcements');
+      if (rawLocal) {
+        localAnnouncements = JSON.parse(rawLocal);
+      }
+    } catch (e) {
+      console.warn('Error reading local_announcements:', e);
+    }
+
+    const merged = [...dbAnnouncements, ...localAnnouncements];
+    const uniqueAnns = Array.from(new Map(merged.map(a => [a.title + a.date, a])).values());
+    
+    return uniqueAnns;
   } catch (error) {
-    console.warn('Warning fetching announcements from database:', error);
+    console.warn('Warning fetching announcements:', error);
     return [];
   }
 }
 
 /**
- * Submit shared material to Supabase.
+ * Submit shared material to Supabase & Local Fallback.
  */
 export async function submitSharedMaterial(data: {
   name: string;
@@ -171,42 +219,89 @@ export async function submitSharedMaterial(data: {
 }): Promise<boolean> {
   try {
     const deptUpper = data.dept ? data.dept.toUpperCase().trim() : 'CSE';
+    const semNormalized = normalizeSemester(data.sem);
+    const subjectFormatted = toTitleCase(data.subject.trim());
+    const typeFormatted = toTitleCase(data.type.trim());
 
-    // 1. Insert into shared_materials
-    const { error: sharedErr } = await supabase
-      .from('shared_materials')
-      .insert([{
-        name: data.name,
-        dept: deptUpper,
-        year: data.year,
-        sem: data.sem,
-        subject: data.subject,
-        type: data.type,
-        title: data.title,
-        link: data.link,
-        email: data.email
-      }]);
-      
-    if (sharedErr) {
-      console.warn('shared_materials insert warning:', sharedErr);
+    const newItem = {
+      name: data.name,
+      dept: deptUpper,
+      year: data.year || getYearFromSem(semNormalized),
+      sem: semNormalized,
+      subject: subjectFormatted,
+      type: typeFormatted,
+      title: data.title,
+      link: data.link,
+      email: data.email,
+      date: 'Just now'
+    };
+
+    // 1. Immediately persist to AsyncStorage for 100% instant availability
+    try {
+      const existing = await AsyncStorage.getItem('local_shared_materials');
+      const list = existing ? JSON.parse(existing) : [];
+      list.unshift(newItem);
+      await AsyncStorage.setItem('local_shared_materials', JSON.stringify(list));
+    } catch (err) {
+      console.warn('AsyncStorage save error:', err);
     }
 
-    // 2. Insert live notification entry into announcements table
+    // 2. Immediately persist live notification entry locally
+    const newAnnouncement = {
+      id: 'local_' + Date.now(),
+      title: `📚 New Upload: ${data.title}`,
+      desc: `Shared by ${data.name} for ${subjectFormatted} (${deptUpper} - Sem ${semNormalized})`,
+      details: `Proud Sairam student ${data.name} shared new ${typeFormatted} ("${data.title}") for ${subjectFormatted} in ${deptUpper} Department, Semester ${semNormalized}.`,
+      link: data.link,
+      date: 'Just now',
+      type: 'announcements',
+      venue: 'Sairam Hub',
+    };
+
+    try {
+      const existingAnns = await AsyncStorage.getItem('local_announcements');
+      const annList = existingAnns ? JSON.parse(existingAnns) : [];
+      annList.unshift(newAnnouncement);
+      await AsyncStorage.setItem('local_announcements', JSON.stringify(annList));
+    } catch (err) {
+      console.warn('AsyncStorage announcement save error:', err);
+    }
+
+    // 3. Try inserting into Supabase shared_materials table
+    try {
+      await supabase
+        .from('shared_materials')
+        .insert([{
+          name: data.name,
+          dept: deptUpper,
+          year: newItem.year,
+          sem: semNormalized,
+          subject: subjectFormatted,
+          type: typeFormatted,
+          title: data.title,
+          link: data.link,
+          email: data.email
+        }]);
+    } catch (sharedErr) {
+      console.warn('shared_materials Supabase insert warning:', sharedErr);
+    }
+
+    // 4. Try inserting into Supabase announcements table
     try {
       await supabase
         .from('announcements')
         .insert([{
-          title: `📚 New Upload: ${data.title}`,
-          desc: `Shared by ${data.name} for ${data.subject} (${deptUpper} - Sem ${data.sem})`,
-          details: `Proud Sairam student ${data.name} shared new ${data.type} ("${data.title}") for ${data.subject} in ${deptUpper} Department, Semester ${data.sem}.`,
+          title: newAnnouncement.title,
+          desc: newAnnouncement.desc,
+          details: newAnnouncement.details,
           link: data.link,
           date: 'Just now'
         }]);
     } catch (annErr) {
-      console.warn('announcements insert notice:', annErr);
+      console.warn('announcements Supabase insert notice:', annErr);
     }
     
-    // Clear cache immediately after successful submit
+    // Clear in-memory cache immediately
     clearMaterialsCache();
     
     return true;
