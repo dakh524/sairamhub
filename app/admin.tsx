@@ -18,6 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/theme';
 import { supabase } from '../helpers/supabase';
 import { deleteMaterial, updateMaterial, addCareerVideo, getAppStats, fetchAllMaterials } from '../helpers/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Material } from '../types/material';
 
 export default function AdminScreen() {
@@ -174,15 +175,30 @@ export default function AdminScreen() {
     }
     setAnnSubmitting(true);
     try {
-      const { error } = await supabase.from('announcements').insert([{
+      const newAnn = {
         title: annTitle,
         desc: annDesc,
         details: annDetails || annDesc,
         link: annLink || null,
         date: 'Just now'
-      }]);
+      };
+      
+      const { error } = await supabase.from('announcements').insert([newAnn]);
       if (error) throw error;
-      Alert.alert('Success', 'Announcement posted globally!');
+      
+      // Save locally to ensure instant visibility on the admin's device
+      try {
+        const rawLocal = await AsyncStorage.getItem('local_announcements');
+        const list = rawLocal ? JSON.parse(rawLocal) : [];
+        list.unshift({ ...newAnn, id: 'local_' + Date.now(), type: 'announcements', venue: 'Sairam Hub' });
+        await AsyncStorage.setItem('local_announcements', JSON.stringify(list));
+      } catch (e) {
+        console.warn('Local save error', e);
+      }
+
+      setTimeout(() => {
+        Alert.alert('Success', 'Announcement posted globally!');
+      }, 100);
       setAnnTitle(''); setAnnDesc(''); setAnnDetails(''); setAnnLink('');
     } catch (err: any) {
       Alert.alert('Error', err.message);
