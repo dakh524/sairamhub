@@ -489,7 +489,7 @@ export default function MainApp() {
                     <LinearGradient
                       colors={['rgba(15, 23, 42, 0.65)', 'rgba(30, 27, 75, 0.85)']}
                       style={{
-                        ...StyleSheet.absoluteFillObject,
+                        ...StyleSheet.absoluteFill,
                         borderRadius: 24,
                       }}
                     />
@@ -822,7 +822,7 @@ export default function MainApp() {
                     <LinearGradient
                       colors={['rgba(15, 23, 42, 0.6)', 'rgba(88, 28, 135, 0.85)']}
                       style={{
-                        ...StyleSheet.absoluteFillObject,
+                        ...StyleSheet.absoluteFill,
                         borderRadius: 22,
                       }}
                     />
