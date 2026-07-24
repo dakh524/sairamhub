@@ -332,7 +332,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
           </Animated.View>
           
           <Animated.View style={[styles.footer, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
-             <Ionicons name="checkmark-shield" size={14} color="#6B5DF6" />
+             <Ionicons name="shield-checkmark" size={14} color="#6B5DF6" />
              <Text style={styles.footerText}>Trusted by students across Sri Sairam Institutions</Text>
           </Animated.View>
 

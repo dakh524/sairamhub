@@ -985,7 +985,7 @@ export default function MainApp() {
                       </TouchableOpacity>
                     </View>
                     <View style={styles.liveBadge}>
-                      <View style={styles.liveDot} />
+                      <View style={styles.bellLiveDot} />
                       <Text style={styles.liveText}>LIVE</Text>
                     </View>
                   </View>
@@ -2057,7 +2057,18 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 12,
   },
-  liveDot: {
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: COLORS.text,
+    marginTop: 16,
+    marginBottom: 12,
+  },
+  heroCard: {
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  bellLiveDot: {
     width: 6,
     height: 6,
     borderRadius: 3,
