@@ -28,6 +28,7 @@ import { COLORS } from '../constants/theme';
 import { fetchAllMaterials, fetchAnnouncements } from '../helpers/api';
 import { registerForPushNotificationsAsync, scheduleLocalNotification } from '../helpers/notifications';
 import { Material, Announcement } from '../types/material';
+import { supabase } from '../helpers/supabase';
 
 const { width } = Dimensions.get('window');
 
@@ -146,8 +147,22 @@ export default function MainApp() {
         const dept = await AsyncStorage.getItem('userDept');
         if (name) setUserName(name);
         if (dept) setUserDept(dept);
+
+        // TRACK UNIQUE DEVICE FOR ADMIN STATS
+        let deviceId = await AsyncStorage.getItem('device_id');
+        if (!deviceId) {
+          deviceId = 'dev_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+          await AsyncStorage.setItem('device_id', deviceId);
+        }
+        
+        // Upsert to Supabase
+        await supabase.from('app_devices').upsert({
+          device_id: deviceId,
+          last_active: new Date().toISOString()
+        }, { onConflict: 'device_id' });
+        
       } catch (err) {
-        console.error('Failed to load user info:', err);
+        console.error('Failed to load user info or track device:', err);
       }
     }
     loadUserData();

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   Text,
@@ -16,6 +16,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/theme';
 import { supabase } from '../helpers/supabase';
+import { deleteMaterial, addCareerVideo, getAppStats, fetchAllMaterials } from '../helpers/api';
+import { Material } from '../types/material';
 
 export default function AdminScreen() {
   const router = useRouter();
@@ -26,36 +28,80 @@ export default function AdminScreen() {
   const [password, setPassword] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
 
-  // Form State for Company Drive
+  // Admin Dashboard State
+  const [activeTab, setActiveTab] = useState<'overview' | 'materials' | 'announcements' | 'career'>('overview');
+
+  // --- TAB 1: OVERVIEW STATES ---
+  const [stats, setStats] = useState({ totalUsers: 0, totalMaterials: 0, totalDrives: 0 });
+  const [statsLoading, setStatsLoading] = useState(false);
+
+  // --- TAB 2: MATERIALS STATES ---
+  const [materials, setMaterials] = useState<Material[]>([]);
+  const [matsLoading, setMatsLoading] = useState(false);
+
+  // --- TAB 3: ANNOUNCEMENT STATES ---
+  const [annTitle, setAnnTitle] = useState('');
+  const [annDesc, setAnnDesc] = useState('');
+  const [annDetails, setAnnDetails] = useState('');
+  const [annLink, setAnnLink] = useState('');
+  const [annSubmitting, setAnnSubmitting] = useState(false);
+
+  // --- TAB 4: CAREER STATES ---
+  // Drive Form
   const [company, setCompany] = useState('');
   const [role, setRole] = useState('');
   const [date, setDate] = useState('');
   const [link, setLink] = useState('');
   const [logoUrl, setLogoUrl] = useState('');
-  const [submitting, setSubmitting] = useState(false);
+  const [submittingDrive, setSubmittingDrive] = useState(false);
+  // Video Form
+  const [vidCategory, setVidCategory] = useState('Placement');
+  const [vidTitle, setVidTitle] = useState('');
+  const [vidId, setVidId] = useState('');
+  const [vidLang, setVidLang] = useState('English');
+  const [submittingVid, setSubmittingVid] = useState(false);
 
+  // -------------------------------------------------------------
+  // EFFECTS
+  // -------------------------------------------------------------
+  useEffect(() => {
+    if (isAuthenticated) {
+      if (activeTab === 'overview') fetchStats();
+      if (activeTab === 'materials') fetchMats();
+    }
+  }, [activeTab, isAuthenticated]);
+
+  const fetchStats = async () => {
+    setStatsLoading(true);
+    const data = await getAppStats();
+    setStats(data);
+    setStatsLoading(false);
+  };
+
+  const fetchMats = async () => {
+    setMatsLoading(true);
+    const data = await fetchAllMaterials();
+    setMaterials(data);
+    setMatsLoading(false);
+  };
+
+  // -------------------------------------------------------------
+  // HANDLERS
+  // -------------------------------------------------------------
   const handleLogin = async () => {
     if (!email || !password) {
       Alert.alert('Missing Fields', 'Please enter both email and password.');
       return;
     }
-
     setAuthLoading(true);
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password: password,
       });
-
-      if (error) {
-        throw error;
-      }
-      
-      if (data.user) {
-        setIsAuthenticated(true);
-      }
+      if (error) throw error;
+      if (data.user) setIsAuthenticated(true);
     } catch (err: any) {
-      console.error(err);
       Alert.alert('Access Denied', err.message || 'Invalid email or password.');
     } finally {
       setAuthLoading(false);
@@ -69,47 +115,96 @@ export default function AdminScreen() {
     setPassword('');
   };
 
-  const handleAddDrive = async () => {
-    if (!company || !role || !date || !link) {
-      Alert.alert('Missing Fields', 'Please fill all required fields (*)');
+  const handleDeleteMaterial = async (id: string, sourceTable: string) => {
+    Alert.alert('Confirm Delete', 'Are you sure you want to permanently delete this material?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: async () => {
+        const success = await deleteMaterial(id, sourceTable);
+        if (success) {
+          Alert.alert('Deleted', 'Material removed successfully.');
+          fetchMats(); // Refresh
+        } else {
+          Alert.alert('Error', 'Failed to delete material.');
+        }
+      }}
+    ]);
+  };
+
+  const handleAddAnnouncement = async () => {
+    if (!annTitle || !annDesc) {
+      Alert.alert('Missing Fields', 'Title and Description are required.');
       return;
     }
-
-    setSubmitting(true);
+    setAnnSubmitting(true);
     try {
-      const { error } = await supabase
-        .from('company_drives')
-        .insert([
-          {
-            company,
-            role,
-            drive_date: date,
-            link,
-            logo_url: logoUrl || 'https://logo.clearbit.com/default.com', // fallback
-            is_active: true,
-          }
-        ]);
-
-      if (error) {
-        throw error;
-      }
-
-      Alert.alert('Success!', 'Company Drive link has been added successfully.');
-      
-      // Clear form
-      setCompany('');
-      setRole('');
-      setDate('');
-      setLink('');
-      setLogoUrl('');
+      const { error } = await supabase.from('announcements').insert([{
+        title: annTitle,
+        desc: annDesc,
+        details: annDetails || annDesc,
+        link: annLink || null,
+        date: 'Just now'
+      }]);
+      if (error) throw error;
+      Alert.alert('Success', 'Announcement posted globally!');
+      setAnnTitle(''); setAnnDesc(''); setAnnDetails(''); setAnnLink('');
     } catch (err: any) {
-      console.error(err);
-      Alert.alert('Error', err.message || 'Failed to add company drive. Is Supabase table created?');
+      Alert.alert('Error', err.message);
     } finally {
-      setSubmitting(false);
+      setAnnSubmitting(false);
     }
   };
 
+  const handleAddDrive = async () => {
+    if (!company || !role || !date || !link) {
+      Alert.alert('Missing Fields', 'Please fill all required drive fields (*)');
+      return;
+    }
+    setSubmittingDrive(true);
+    try {
+      const { error } = await supabase.from('company_drives').insert([{
+        company, role, drive_date: date, link,
+        logo_url: logoUrl || 'https://logo.clearbit.com/default.com',
+        is_active: true,
+      }]);
+      if (error) throw error;
+      Alert.alert('Success!', 'Company Drive link added.');
+      setCompany(''); setRole(''); setDate(''); setLink(''); setLogoUrl('');
+    } catch (err: any) {
+      Alert.alert('Error', err.message);
+    } finally {
+      setSubmittingDrive(false);
+    }
+  };
+
+  const handleAddVideo = async () => {
+    if (!vidTitle || !vidId) {
+      Alert.alert('Missing Fields', 'Title and YouTube Video ID are required.');
+      return;
+    }
+    setSubmittingVid(true);
+    try {
+      const success = await addCareerVideo({
+        category: vidCategory,
+        title: vidTitle,
+        videoId: vidId,
+        language: vidLang
+      });
+      if (success) {
+        Alert.alert('Success', 'YouTube video added.');
+        setVidTitle(''); setVidId('');
+      } else {
+        Alert.alert('Error', 'Failed to add video.');
+      }
+    } catch (err: any) {
+      Alert.alert('Error', err.message);
+    } finally {
+      setSubmittingVid(false);
+    }
+  };
+
+  // -------------------------------------------------------------
+  // RENDER LOGIN
+  // -------------------------------------------------------------
   if (!isAuthenticated) {
     return (
       <SafeAreaView style={styles.container}>
@@ -130,49 +225,26 @@ export default function AdminScreen() {
 
           <View style={[styles.inputGroup, { width: '100%' }]}>
             <Text style={styles.label}>Admin Email</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="e.g. admin@sairam.edu.in"
-              placeholderTextColor="#94A3B8"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              value={email}
-              onChangeText={setEmail}
-            />
+            <TextInput style={styles.input} placeholder="admin@sairam.edu.in" placeholderTextColor="#94A3B8" keyboardType="email-address" autoCapitalize="none" value={email} onChangeText={setEmail} />
           </View>
-
           <View style={[styles.inputGroup, { width: '100%', marginBottom: 32 }]}>
             <Text style={styles.label}>Password</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter Password"
-              placeholderTextColor="#94A3B8"
-              secureTextEntry
-              value={password}
-              onChangeText={setPassword}
-            />
+            <TextInput style={styles.input} placeholder="Enter Password" placeholderTextColor="#94A3B8" secureTextEntry value={password} onChangeText={setPassword} />
           </View>
-
-          <TouchableOpacity 
-            style={styles.loginBtn} 
-            onPress={handleLogin}
-            disabled={authLoading}
-          >
-            {authLoading ? (
-              <ActivityIndicator color="#FFFFFF" />
-            ) : (
-              <>
-                <Text style={styles.loginBtnText}>Secure Login</Text>
-                <Ionicons name="log-in-outline" size={20} color="#FFFFFF" style={{ marginLeft: 8 }} />
-              </>
-            )}
+          <TouchableOpacity style={styles.loginBtn} onPress={handleLogin} disabled={authLoading}>
+            {authLoading ? <ActivityIndicator color="#FFFFFF" /> : <>
+              <Text style={styles.loginBtnText}>Secure Login</Text>
+              <Ionicons name="log-in-outline" size={20} color="#FFFFFF" style={{ marginLeft: 8 }} />
+            </>}
           </TouchableOpacity>
         </View>
       </SafeAreaView>
     );
   }
 
-  // === ADMIN DASHBOARD ===
+  // -------------------------------------------------------------
+  // RENDER ADMIN DASHBOARD
+  // -------------------------------------------------------------
   return (
     <SafeAreaView style={styles.container}>
       {/* HEADER */}
@@ -180,93 +252,183 @@ export default function AdminScreen() {
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color={COLORS.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Admin Dashboard</Text>
+        <Text style={styles.headerTitle}>Command Center</Text>
         <TouchableOpacity style={styles.backButton} onPress={handleLogout}>
           <Ionicons name="log-out-outline" size={24} color="#EF4444" />
         </TouchableOpacity>
       </View>
 
+      {/* TABS */}
+      <View style={styles.tabContainer}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16 }}>
+          <TouchableOpacity style={[styles.tab, activeTab === 'overview' && styles.activeTab]} onPress={() => setActiveTab('overview')}>
+            <Ionicons name="analytics" size={18} color={activeTab === 'overview' ? '#FFFFFF' : '#64748B'} style={{ marginRight: 6 }} />
+            <Text style={[styles.tabText, activeTab === 'overview' && styles.activeTabText]}>Overview</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.tab, activeTab === 'materials' && styles.activeTab]} onPress={() => setActiveTab('materials')}>
+            <Ionicons name="library" size={18} color={activeTab === 'materials' ? '#FFFFFF' : '#64748B'} style={{ marginRight: 6 }} />
+            <Text style={[styles.tabText, activeTab === 'materials' && styles.activeTabText]}>Materials</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.tab, activeTab === 'announcements' && styles.activeTab]} onPress={() => setActiveTab('announcements')}>
+            <Ionicons name="megaphone" size={18} color={activeTab === 'announcements' ? '#FFFFFF' : '#64748B'} style={{ marginRight: 6 }} />
+            <Text style={[styles.tabText, activeTab === 'announcements' && styles.activeTabText]}>Alerts</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.tab, activeTab === 'career' && styles.activeTab]} onPress={() => setActiveTab('career')}>
+            <Ionicons name="briefcase" size={18} color={activeTab === 'career' ? '#FFFFFF' : '#64748B'} style={{ marginRight: 6 }} />
+            <Text style={[styles.tabText, activeTab === 'career' && styles.activeTabText]}>Career</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </View>
+
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
           
-          <Text style={styles.sectionTitle}>Add New Company Drive</Text>
-          
-          <View style={styles.card}>
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Company Name *</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="e.g. TCS (Ninja/Digital)"
-                placeholderTextColor="#94A3B8"
-                value={company}
-                onChangeText={setCompany}
-              />
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Job Role *</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="e.g. Software Engineer"
-                placeholderTextColor="#94A3B8"
-                value={role}
-                onChangeText={setRole}
-              />
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Drive Date *</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="e.g. 25 Aug 2026"
-                placeholderTextColor="#94A3B8"
-                value={date}
-                onChangeText={setDate}
-              />
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Application Link *</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="e.g. https://www.tcs.com/careers"
-                placeholderTextColor="#94A3B8"
-                value={link}
-                onChangeText={setLink}
-                autoCapitalize="none"
-              />
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Logo URL (Optional)</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="e.g. https://logo.clearbit.com/tcs.com"
-                placeholderTextColor="#94A3B8"
-                value={logoUrl}
-                onChangeText={setLogoUrl}
-                autoCapitalize="none"
-              />
-              <Text style={{ fontSize: 11, color: '#94A3B8', marginTop: 4 }}>
-                Leave blank for default. Hint: use logo.clearbit.com/companydomain.com
-              </Text>
-            </View>
-
-            <TouchableOpacity 
-              style={styles.submitBtn} 
-              onPress={handleAddDrive}
-              disabled={submitting}
-            >
-              {submitting ? (
-                <ActivityIndicator color="#FFFFFF" />
+          {/* ===================== OVERVIEW TAB ===================== */}
+          {activeTab === 'overview' && (
+            <View>
+              <Text style={styles.sectionTitle}>App Statistics</Text>
+              {statsLoading ? (
+                <ActivityIndicator size="large" color={COLORS.primary} style={{ marginTop: 40 }} />
               ) : (
-                <>
-                  <Text style={styles.submitBtnText}>Add Drive Link</Text>
-                  <Ionicons name="add-circle-outline" size={20} color="#FFFFFF" style={{ marginLeft: 8 }} />
-                </>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
+                  <View style={styles.statCard}>
+                    <Ionicons name="phone-portrait-outline" size={32} color="#3B82F6" />
+                    <Text style={styles.statNumber}>{stats.totalUsers}</Text>
+                    <Text style={styles.statLabel}>Unique Devices</Text>
+                  </View>
+                  <View style={styles.statCard}>
+                    <Ionicons name="documents-outline" size={32} color="#10B981" />
+                    <Text style={styles.statNumber}>{stats.totalMaterials}</Text>
+                    <Text style={styles.statLabel}>Total Materials</Text>
+                  </View>
+                  <View style={styles.statCard}>
+                    <Ionicons name="business-outline" size={32} color="#8B5CF6" />
+                    <Text style={styles.statNumber}>{stats.totalDrives}</Text>
+                    <Text style={styles.statLabel}>Company Drives</Text>
+                  </View>
+                </View>
               )}
-            </TouchableOpacity>
-          </View>
+            </View>
+          )}
+
+          {/* ===================== MATERIALS TAB ===================== */}
+          {activeTab === 'materials' && (
+            <View>
+              <Text style={styles.sectionTitle}>Moderation Queue</Text>
+              <Text style={{ color: '#64748B', marginBottom: 16 }}>Review and remove unrelated uploads.</Text>
+              {matsLoading ? (
+                <ActivityIndicator size="large" color={COLORS.primary} style={{ marginTop: 40 }} />
+              ) : (
+                materials.map((mat, i) => (
+                  <View key={i} style={styles.matCard}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontWeight: 'bold', fontSize: 16, color: '#1E293B', marginBottom: 4 }}>{mat.title}</Text>
+                      <Text style={{ fontSize: 12, color: '#64748B' }}>By {mat.contributor_name} • {mat.dept} Sem {mat.sem}</Text>
+                    </View>
+                    {mat.id && mat.sourceTable ? (
+                      <TouchableOpacity 
+                        style={styles.deleteBtn}
+                        onPress={() => handleDeleteMaterial(mat.id!, mat.sourceTable!)}
+                      >
+                        <Ionicons name="trash-outline" size={18} color="#EF4444" />
+                      </TouchableOpacity>
+                    ) : (
+                      <Text style={{ fontSize: 10, color: '#94A3B8' }}>Local</Text>
+                    )}
+                  </View>
+                ))
+              )}
+            </View>
+          )}
+
+          {/* ===================== ANNOUNCEMENTS TAB ===================== */}
+          {activeTab === 'announcements' && (
+            <View>
+              <Text style={styles.sectionTitle}>Send Global Alert</Text>
+              <View style={styles.card}>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Title *</Text>
+                  <TextInput style={styles.input} placeholder="e.g. Server Maintenance" value={annTitle} onChangeText={setAnnTitle} />
+                </View>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Short Description *</Text>
+                  <TextInput style={styles.input} placeholder="e.g. App will be down for 1 hr" value={annDesc} onChangeText={setAnnDesc} />
+                </View>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Details / Body</Text>
+                  <TextInput style={[styles.input, { height: 80 }]} multiline placeholder="Full announcement text..." value={annDetails} onChangeText={setAnnDetails} />
+                </View>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Action Link (Optional)</Text>
+                  <TextInput style={styles.input} placeholder="https://..." value={annLink} onChangeText={setAnnLink} />
+                </View>
+                <TouchableOpacity style={styles.submitBtn} onPress={handleAddAnnouncement} disabled={annSubmitting}>
+                  {annSubmitting ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.submitBtnText}>Broadcast Alert</Text>}
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+
+          {/* ===================== CAREER TAB ===================== */}
+          {activeTab === 'career' && (
+            <View>
+              <Text style={styles.sectionTitle}>Manage Placement Drives</Text>
+              <View style={[styles.card, { marginBottom: 32 }]}>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Company Name *</Text>
+                  <TextInput style={styles.input} placeholder="e.g. TCS (Ninja)" value={company} onChangeText={setCompany} />
+                </View>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Job Role *</Text>
+                  <TextInput style={styles.input} placeholder="e.g. Software Engineer" value={role} onChangeText={setRole} />
+                </View>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Drive Date *</Text>
+                  <TextInput style={styles.input} placeholder="e.g. 25 Aug 2026" value={date} onChangeText={setDate} />
+                </View>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Application Link *</Text>
+                  <TextInput style={styles.input} placeholder="https://..." value={link} onChangeText={setLink} autoCapitalize="none" />
+                </View>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Logo URL (Optional)</Text>
+                  <TextInput style={styles.input} placeholder="https://logo.clearbit.com/tcs.com" value={logoUrl} onChangeText={setLogoUrl} autoCapitalize="none" />
+                </View>
+                <TouchableOpacity style={styles.submitBtn} onPress={handleAddDrive} disabled={submittingDrive}>
+                  {submittingDrive ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.submitBtnText}>Add Drive Link</Text>}
+                </TouchableOpacity>
+              </View>
+
+              <Text style={styles.sectionTitle}>Add YouTube Video</Text>
+              <View style={styles.card}>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Category</Text>
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                    {['Placement', 'Aptitude', 'Coding', 'GATE'].map(cat => (
+                      <TouchableOpacity 
+                        key={cat} 
+                        onPress={() => setVidCategory(cat)}
+                        style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, backgroundColor: vidCategory === cat ? '#6B5DF6' : '#EEF2FF' }}
+                      >
+                        <Text style={{ color: vidCategory === cat ? '#FFF' : '#4F46E5', fontSize: 12, fontWeight: 'bold' }}>{cat}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Video Title *</Text>
+                  <TextInput style={styles.input} placeholder="e.g. Quants Foundation" value={vidTitle} onChangeText={setVidTitle} />
+                </View>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>YouTube Video ID *</Text>
+                  <TextInput style={styles.input} placeholder="e.g. vxHUFFiT0OI" value={vidId} onChangeText={setVidId} autoCapitalize="none" />
+                </View>
+                <TouchableOpacity style={[styles.submitBtn, { backgroundColor: '#EF4444' }]} onPress={handleAddVideo} disabled={submittingVid}>
+                  {submittingVid ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.submitBtnText}>Publish Video</Text>}
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
 
           <View style={{ height: 40 }} />
         </ScrollView>
@@ -276,131 +438,32 @@ export default function AdminScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F8FAFC',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
-  },
-  backButton: {
-    padding: 8,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#0F172A',
-  },
-  loginContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  iconCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#EF4444',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 20,
-    shadowColor: '#EF4444',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.3,
-    shadowRadius: 15,
-    elevation: 8,
-  },
-  loginTitle: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#0F172A',
-    marginBottom: 8,
-  },
-  loginSub: {
-    fontSize: 14,
-    color: '#64748B',
-    marginBottom: 32,
-  },
-  loginBtn: {
-    backgroundColor: '#0F172A',
-    width: '100%',
-    padding: 16,
-    borderRadius: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  loginBtnText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  content: {
-    padding: 20,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#0F172A',
-    marginBottom: 16,
-  },
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 2,
-  },
-  inputGroup: {
-    marginBottom: 16,
-  },
-  label: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#1E293B',
-    marginBottom: 8,
-  },
-  input: {
-    backgroundColor: '#F8FAFC',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 14,
-    color: '#1E293B',
-  },
-  submitBtn: {
-    backgroundColor: '#6B5DF6',
-    width: '100%',
-    padding: 16,
-    borderRadius: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 10,
-    shadowColor: '#6B5DF6',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    elevation: 6,
-  },
-  submitBtnText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
+  container: { flex: 1, backgroundColor: '#F8FAFC' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
+  backButton: { padding: 8 },
+  headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#0F172A' },
+  tabContainer: { backgroundColor: '#FFFFFF', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
+  tab: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#F1F5F9', marginRight: 12 },
+  activeTab: { backgroundColor: '#0F172A' },
+  tabText: { fontSize: 14, fontWeight: '600', color: '#64748B' },
+  activeTabText: { color: '#FFFFFF' },
+  loginContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
+  iconCircle: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#EF4444', justifyContent: 'center', alignItems: 'center', marginBottom: 20, shadowColor: '#EF4444', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.3, shadowRadius: 15, elevation: 8 },
+  loginTitle: { fontSize: 24, fontWeight: '800', color: '#0F172A', marginBottom: 8 },
+  loginSub: { fontSize: 14, color: '#64748B', marginBottom: 32 },
+  loginBtn: { backgroundColor: '#0F172A', width: '100%', padding: 16, borderRadius: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+  loginBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' },
+  content: { padding: 20 },
+  sectionTitle: { fontSize: 20, fontWeight: '800', color: '#0F172A', marginBottom: 16 },
+  card: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 20, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 2 },
+  inputGroup: { marginBottom: 16 },
+  label: { fontSize: 13, fontWeight: '700', color: '#1E293B', marginBottom: 8 },
+  input: { backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, fontSize: 14, color: '#1E293B' },
+  submitBtn: { backgroundColor: '#6B5DF6', width: '100%', padding: 16, borderRadius: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 10 },
+  submitBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' },
+  statCard: { width: '48%', backgroundColor: '#FFFFFF', padding: 20, borderRadius: 20, marginBottom: 16, alignItems: 'center', borderWidth: 1, borderColor: '#E2E8F0' },
+  statNumber: { fontSize: 28, fontWeight: '900', color: '#0F172A', marginTop: 12, marginBottom: 4 },
+  statLabel: { fontSize: 12, color: '#64748B', fontWeight: '600' },
+  matCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', padding: 16, borderRadius: 16, marginBottom: 12, borderWidth: 1, borderColor: '#E2E8F0' },
+  deleteBtn: { padding: 10, backgroundColor: '#FEF2F2', borderRadius: 12 }
 });

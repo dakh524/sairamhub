@@ -77,7 +77,9 @@ export async function fetchAllMaterials(): Promise<Material[]> {
         drive_link: row.drive_link ? row.drive_link.replace(/^"|"$/g, '').trim() : (row.link || 'https://drive.google.com'),
         contributor_name: row.contributor_name || 'Sairam Student',
         date: row.date || 'Today',
-        approved: 'YES'
+        approved: 'YES',
+        id: row.id ? String(row.id) : undefined,
+        sourceTable: 'materials'
       };
     });
 
@@ -94,7 +96,9 @@ export async function fetchAllMaterials(): Promise<Material[]> {
         drive_link: row.link ? row.link.replace(/^"|"$/g, '').trim() : 'https://drive.google.com',
         contributor_name: row.name || 'Sairam Student',
         date: row.date || 'Just now',
-        approved: 'YES'
+        approved: 'YES',
+        id: row.id ? String(row.id) : undefined,
+        sourceTable: 'shared_materials'
       };
     });
 
@@ -308,5 +312,78 @@ export async function submitSharedMaterial(data: {
   } catch (error: any) {
     console.error('Error submitting material:', error);
     throw new Error(error.message || 'Submission failed');
+  }
+}
+
+/**
+ * ADMIN: Delete a material from either 'materials' or 'shared_materials' table
+ */
+export async function deleteMaterial(id: string, sourceTable: string): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from(sourceTable)
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+    
+    // Clear cache to refresh the list
+    clearMaterialsCache();
+    return true;
+  } catch (err) {
+    console.error('Failed to delete material:', err);
+    return false;
+  }
+}
+
+/**
+ * ADMIN: Add a new YouTube video link
+ */
+export async function addCareerVideo(data: {
+  category: string;
+  title: string;
+  videoId?: string;
+  playlistId?: string;
+  language: string;
+}): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('career_videos')
+      .insert([{
+        category: data.category,
+        title: data.title,
+        video_id: data.videoId || null,
+        playlist_id: data.playlistId || null,
+        language: data.language
+      }]);
+
+    if (error) throw error;
+    return true;
+  } catch (err) {
+    console.error('Failed to add career video:', err);
+    return false;
+  }
+}
+
+/**
+ * ADMIN: Get basic app statistics (Users, Materials)
+ */
+export async function getAppStats(): Promise<{ totalUsers: number; totalMaterials: number; totalDrives: number }> {
+  try {
+    const [devicesRes, matsRes, sharedRes, drivesRes] = await Promise.all([
+      supabase.from('app_devices').select('device_id', { count: 'exact', head: true }),
+      supabase.from('materials').select('id', { count: 'exact', head: true }),
+      supabase.from('shared_materials').select('id', { count: 'exact', head: true }),
+      supabase.from('company_drives').select('id', { count: 'exact', head: true })
+    ]);
+
+    return {
+      totalUsers: devicesRes.count || 0,
+      totalMaterials: (matsRes.count || 0) + (sharedRes.count || 0),
+      totalDrives: drivesRes.count || 0
+    };
+  } catch (err) {
+    console.error('Failed to fetch app stats:', err);
+    return { totalUsers: 0, totalMaterials: 0, totalDrives: 0 };
   }
 }

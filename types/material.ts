@@ -1,4 +1,6 @@
 export interface Material {
+  id?: string;
+  sourceTable?: string;
   year?: string; // 1st Year, 2nd Year, 3rd Year, 4th Year
   dept: string; // CSE, IT, ECE, EEE, AIML, AIDS, CSBS, Mechanical, Civil, Chemical, Biomedical
   sem: string; // 1, 2, 3, 4, 5, 6, 7, 8
