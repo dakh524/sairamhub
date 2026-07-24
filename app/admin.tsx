@@ -10,13 +10,14 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  Modal,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/theme';
 import { supabase } from '../helpers/supabase';
-import { deleteMaterial, addCareerVideo, getAppStats, fetchAllMaterials } from '../helpers/api';
+import { deleteMaterial, updateMaterial, addCareerVideo, getAppStats, fetchAllMaterials } from '../helpers/api';
 import { Material } from '../types/material';
 
 export default function AdminScreen() {
@@ -38,6 +39,14 @@ export default function AdminScreen() {
   // --- TAB 2: MATERIALS STATES ---
   const [materials, setMaterials] = useState<Material[]>([]);
   const [matsLoading, setMatsLoading] = useState(false);
+  
+  const [editingMat, setEditingMat] = useState<Material | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editSubject, setEditSubject] = useState('');
+  const [editDept, setEditDept] = useState('');
+  const [editSem, setEditSem] = useState('');
+  const [editLink, setEditLink] = useState('');
+  const [editSubmitting, setEditSubmitting] = useState(false);
 
   // --- TAB 3: ANNOUNCEMENT STATES ---
   const [annTitle, setAnnTitle] = useState('');
@@ -128,6 +137,34 @@ export default function AdminScreen() {
         }
       }}
     ]);
+  };
+
+  const handleUpdateMaterial = async () => {
+    if (!editingMat || !editingMat.id || !editingMat.sourceTable) return;
+    setEditSubmitting(true);
+    
+    const updates: any = {
+      title: editTitle,
+      subject: editSubject,
+      dept: editDept,
+      sem: editSem,
+    };
+    
+    if (editingMat.sourceTable === 'materials') {
+      updates.drive_link = editLink;
+    } else {
+      updates.link = editLink;
+    }
+
+    const success = await updateMaterial(editingMat.id, editingMat.sourceTable, updates);
+    if (success) {
+      Alert.alert('Success', 'Material updated successfully.');
+      setEditingMat(null);
+      fetchMats();
+    } else {
+      Alert.alert('Error', 'Failed to update material.');
+    }
+    setEditSubmitting(false);
   };
 
   const handleAddAnnouncement = async () => {
@@ -326,18 +363,75 @@ export default function AdminScreen() {
                       <Text style={{ fontSize: 12, color: '#64748B' }}>By {mat.contributor_name} • {mat.dept} Sem {mat.sem}</Text>
                     </View>
                     {mat.id && mat.sourceTable ? (
-                      <TouchableOpacity 
-                        style={styles.deleteBtn}
-                        onPress={() => handleDeleteMaterial(mat.id!, mat.sourceTable!)}
-                      >
-                        <Ionicons name="trash-outline" size={18} color="#EF4444" />
-                      </TouchableOpacity>
+                      <View style={{ flexDirection: 'row', gap: 8 }}>
+                        <TouchableOpacity 
+                          style={[styles.deleteBtn, { backgroundColor: '#EEF2FF' }]}
+                          onPress={() => {
+                            setEditingMat(mat);
+                            setEditTitle(mat.title);
+                            setEditSubject(mat.subject);
+                            setEditDept(mat.dept);
+                            setEditSem(mat.sem);
+                            setEditLink(mat.drive_link);
+                          }}
+                        >
+                          <Ionicons name="pencil-outline" size={18} color="#4F46E5" />
+                        </TouchableOpacity>
+                        <TouchableOpacity 
+                          style={styles.deleteBtn}
+                          onPress={() => handleDeleteMaterial(mat.id!, mat.sourceTable!)}
+                        >
+                          <Ionicons name="trash-outline" size={18} color="#EF4444" />
+                        </TouchableOpacity>
+                      </View>
                     ) : (
                       <Text style={{ fontSize: 10, color: '#94A3B8' }}>Local</Text>
                     )}
                   </View>
                 ))
               )}
+
+              {/* Edit Material Modal */}
+              <Modal visible={!!editingMat} transparent animationType="slide">
+                <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 }}>
+                  <View style={{ backgroundColor: '#FFF', borderRadius: 20, padding: 20 }}>
+                    <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 16 }}>Edit Material</Text>
+                    
+                    <View style={styles.inputGroup}>
+                      <Text style={styles.label}>Title</Text>
+                      <TextInput style={styles.input} value={editTitle} onChangeText={setEditTitle} />
+                    </View>
+                    <View style={styles.inputGroup}>
+                      <Text style={styles.label}>Subject</Text>
+                      <TextInput style={styles.input} value={editSubject} onChangeText={setEditSubject} />
+                    </View>
+                    <View style={{ flexDirection: 'row', gap: 12 }}>
+                      <View style={[styles.inputGroup, { flex: 1 }]}>
+                        <Text style={styles.label}>Dept</Text>
+                        <TextInput style={styles.input} value={editDept} onChangeText={setEditDept} />
+                      </View>
+                      <View style={[styles.inputGroup, { flex: 1 }]}>
+                        <Text style={styles.label}>Sem</Text>
+                        <TextInput style={styles.input} value={editSem} onChangeText={setEditSem} />
+                      </View>
+                    </View>
+                    <View style={styles.inputGroup}>
+                      <Text style={styles.label}>Link</Text>
+                      <TextInput style={styles.input} value={editLink} onChangeText={setEditLink} autoCapitalize="none" />
+                    </View>
+
+                    <View style={{ flexDirection: 'row', gap: 12, marginTop: 10 }}>
+                      <TouchableOpacity style={{ flex: 1, padding: 14, backgroundColor: '#F1F5F9', borderRadius: 12, alignItems: 'center' }} onPress={() => setEditingMat(null)}>
+                        <Text style={{ fontWeight: 'bold', color: '#64748B' }}>Cancel</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity style={{ flex: 1, padding: 14, backgroundColor: '#6B5DF6', borderRadius: 12, alignItems: 'center' }} onPress={handleUpdateMaterial} disabled={editSubmitting}>
+                        {editSubmitting ? <ActivityIndicator color="#FFF" /> : <Text style={{ fontWeight: 'bold', color: '#FFF' }}>Save Changes</Text>}
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </View>
+              </Modal>
+
             </View>
           )}
 

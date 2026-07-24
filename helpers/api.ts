@@ -337,6 +337,26 @@ export async function deleteMaterial(id: string, sourceTable: string): Promise<b
 }
 
 /**
+ * ADMIN: Update a material's details
+ */
+export async function updateMaterial(id: string, sourceTable: string, updates: any): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from(sourceTable)
+      .update(updates)
+      .eq('id', id);
+
+    if (error) throw error;
+    
+    clearMaterialsCache();
+    return true;
+  } catch (err) {
+    console.error('Failed to update material:', err);
+    return false;
+  }
+}
+
+/**
  * ADMIN: Add a new YouTube video link
  */
 export async function addCareerVideo(data: {
