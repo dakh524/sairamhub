@@ -431,21 +431,21 @@ export default function MainApp() {
                   </View>
                 </View>
 
-                {/* DAILY MOMENTUM TICKER */}
+                {/* SAIRAM HUB HIGHLIGHTS TICKER */}
                 <View style={styles.momentumBar}>
                   <View style={styles.momentumItem}>
-                    <Ionicons name="flame" size={16} color="#FF5E36" />
-                    <Text style={styles.momentumText}>5 Streak</Text>
+                    <Ionicons name="library" size={16} color="#3B82F6" />
+                    <Text style={styles.momentumText}>{materials.length > 0 ? `${materials.length}+` : '500+'} Materials</Text>
                   </View>
                   <View style={styles.momentumDivider} />
                   <View style={styles.momentumItem}>
-                    <Ionicons name="document-text" size={16} color="#3B82F6" />
-                    <Text style={styles.momentumText}>14 Uploads</Text>
+                    <Ionicons name="school" size={16} color="#8B5CF6" />
+                    <Text style={styles.momentumText}>All Semesters</Text>
                   </View>
                   <View style={styles.momentumDivider} />
                   <View style={styles.momentumItem}>
-                    <Ionicons name="trophy" size={16} color="#F59E0B" />
-                    <Text style={styles.momentumText}>Top 5%</Text>
+                    <Ionicons name="shield-checkmark" size={16} color="#10B981" />
+                    <Text style={styles.momentumText}>Verified Notes</Text>
                   </View>
                 </View>
 
