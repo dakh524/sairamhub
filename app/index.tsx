@@ -99,6 +99,13 @@ const MOTIVATIONAL_QUOTES = [
   },
 ];
 
+const COMPANY_DRIVE_LINKS = [
+  { id: '1', company: 'TCS (Ninja/Digital)', role: 'Software Engineer', date: '25 Aug 2026', link: 'https://www.tcs.com/careers', logo: 'https://logo.clearbit.com/tcs.com' },
+  { id: '2', company: 'Zoho Corporation', role: 'Member Technical Staff', date: '02 Sep 2026', link: 'https://careers.zohocorp.com', logo: 'https://logo.clearbit.com/zohocorp.com' },
+  { id: '3', company: 'Cognizant (GenC)', role: 'Programmer Analyst', date: '15 Sep 2026', link: 'https://careers.cognizant.com', logo: 'https://logo.clearbit.com/cognizant.com' },
+  { id: '4', company: 'Wipro (Elite)', role: 'Project Engineer', date: 'Coming Soon', link: 'https://careers.wipro.com', logo: 'https://logo.clearbit.com/wipro.com' },
+];
+
 export default function MainApp() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'home' | 'materials' | 'career' | 'updates' | 'more'>('home');
@@ -950,6 +957,57 @@ export default function MainApp() {
                     ))}
                   </View>
                 </ScrollView>
+
+                {/* 4. COMPANY DRIVE LINKS (ADMIN SECTION) */}
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                  <Text style={{ fontSize: 18, fontWeight: '800', color: '#111827' }}>Active Company Drives</Text>
+                  <View style={{ backgroundColor: '#EEF2FF', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 }}>
+                    <Text style={{ fontSize: 11, color: '#4F46E5', fontWeight: 'bold' }}>Live</Text>
+                  </View>
+                </View>
+
+                <View style={{ marginBottom: 32 }}>
+                  {COMPANY_DRIVE_LINKS.map((item, idx) => (
+                    <TouchableOpacity
+                      key={item.id}
+                      style={{ 
+                        flexDirection: 'row', 
+                        alignItems: 'center', 
+                        backgroundColor: '#FFFFFF', 
+                        padding: 16, 
+                        borderRadius: 16, 
+                        marginBottom: 12, 
+                        borderWidth: 1, 
+                        borderColor: '#E2E8F0',
+                        shadowColor: '#000',
+                        shadowOffset: { width: 0, height: 2 },
+                        shadowOpacity: 0.05,
+                        shadowRadius: 6,
+                        elevation: 2
+                      }}
+                      onPress={() => Linking.openURL(item.link)}
+                    >
+                      <View style={{ width: 48, height: 48, borderRadius: 12, backgroundColor: '#F8FAFC', justifyContent: 'center', alignItems: 'center', marginRight: 16, overflow: 'hidden', borderWidth: 1, borderColor: '#F1F5F9' }}>
+                        <Image source={{ uri: item.logo }} style={{ width: 32, height: 32 }} resizeMode="contain" />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#1E293B', marginBottom: 4 }}>{item.company}</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                          <Ionicons name="briefcase-outline" size={12} color="#64748B" style={{ marginRight: 4 }} />
+                          <Text style={{ fontSize: 12, color: '#64748B', marginRight: 12 }}>{item.role}</Text>
+                          <Ionicons name="calendar-outline" size={12} color="#64748B" style={{ marginRight: 4 }} />
+                          <Text style={{ fontSize: 12, color: '#64748B' }}>{item.date}</Text>
+                        </View>
+                      </View>
+                      <View style={{ backgroundColor: '#F5F3FF', width: 32, height: 32, borderRadius: 16, justifyContent: 'center', alignItems: 'center' }}>
+                        <Ionicons name="open-outline" size={16} color="#7C3AED" />
+                      </View>
+                    </TouchableOpacity>
+                  ))}
+                  <Text style={{ textAlign: 'center', fontSize: 12, color: '#94A3B8', marginTop: 8 }}>
+                    *These links will be updated by Admin during placement drives
+                  </Text>
+                </View>
 
 
               </ScrollView>
