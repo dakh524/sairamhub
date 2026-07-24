@@ -195,12 +195,16 @@ export default function AdminScreen() {
     }
     setAnnSubmitting(true);
     try {
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const d = new Date();
+      const formattedDate = `${d.getDate().toString().padStart(2, '0')} ${months[d.getMonth()]} ${d.getFullYear()}`;
+      
       const newAnn = {
         title: annTitle,
-        desc: annDesc,
+        "desc": annDesc,
         details: annDetails || annDesc,
         link: annLink || null,
-        date: 'Just now'
+        date: formattedDate
       };
       
       const { error } = await supabase.from('announcements').insert([newAnn]);
