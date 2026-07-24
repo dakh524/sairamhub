@@ -23,6 +23,12 @@ import { scheduleLocalNotification } from '../helpers/notifications';
 const SEMESTERS = ['1', '2', '3', '4', '5', '6', '7', '8'];
 const LEVELS = ['Semester', 'Subject', 'Unit'];
 const TYPES = ['Notes', 'Question Bank', 'Lab Material', 'Record', 'Syllabus', 'Other'];
+const DEPARTMENTS = [
+  'COMMON', 'CSE', 'ECE', 'MECH', 'IT', 'EEE', 'AI & DS', 'CSE (AI & ML)',
+  'CSBS', 'CIVIL', 'CCE', 'CSE (Cyber Security)', 'CSE (IoT)', 'EIE',
+  'ICE', 'MZ', 'MU', 'MBA', 'M.Tech CSE', 'H & S'
+];
+const YEARS = ['1st Year', '2nd Year', '3rd Year', '4th Year', '5th Year'];
 
 export default function ShareScreen() {
   const router = useRouter();
@@ -40,6 +46,8 @@ export default function ShareScreen() {
 
   const [submitting, setSubmitting] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showDeptPicker, setShowDeptPicker] = useState(false);
+  const [showYearPicker, setShowYearPicker] = useState(false);
 
   useEffect(() => {
     // Auto-fill user details from AsyncStorage
@@ -125,6 +133,45 @@ export default function ShareScreen() {
     </View>
   );
 
+  const renderPickerModal = (
+    visible: boolean,
+    setVisible: (v: boolean) => void,
+    title: string,
+    options: string[],
+    selectedValue: string,
+    onSelect: (val: string) => void
+  ) => (
+    <Modal visible={visible} transparent={true} animationType="slide">
+      <TouchableOpacity style={styles.pickerOverlay} activeOpacity={1} onPress={() => setVisible(false)}>
+        <View style={styles.pickerContent}>
+          <View style={styles.pickerHeader}>
+            <Text style={styles.pickerTitle}>{title}</Text>
+            <TouchableOpacity onPress={() => setVisible(false)} style={styles.pickerCloseBtn}>
+              <Ionicons name="close" size={24} color="#64748B" />
+            </TouchableOpacity>
+          </View>
+          <ScrollView style={styles.pickerList} showsVerticalScrollIndicator={false}>
+            {options.map((item, idx) => (
+              <TouchableOpacity
+                key={idx}
+                style={[styles.pickerItem, selectedValue === item && styles.pickerItemSelected]}
+                onPress={() => {
+                  onSelect(item);
+                  setVisible(false);
+                }}
+              >
+                <Text style={[styles.pickerItemText, selectedValue === item && styles.pickerItemTextSelected]}>
+                  {item}
+                </Text>
+                {selectedValue === item && <Ionicons name="checkmark-circle" size={20} color="#6B5DF6" />}
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      </TouchableOpacity>
+    </Modal>
+  );
+
   return (
     <SafeAreaView style={styles.container}>
       {/* HEADER */}
@@ -197,34 +244,30 @@ export default function ShareScreen() {
             <View style={{ flexDirection: 'row', gap: 12 }}>
               <View style={[styles.inputGroup, { flex: 1 }]}>
                 <Text style={styles.label}>Department *</Text>
-                <View style={[styles.inputContainer, focusedInput === 'dept' && styles.inputContainerFocused]}>
-                  <Ionicons name="school-outline" size={20} color={focusedInput === 'dept' ? '#6B5DF6' : '#94A3B8'} style={styles.inputIcon} />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="e.g. CSE"
-                    placeholderTextColor="#94A3B8"
-                    value={dept}
-                    onChangeText={setDept}
-                    onFocus={() => setFocusedInput('dept')}
-                    onBlur={() => setFocusedInput(null)}
-                  />
-                </View>
+                <TouchableOpacity 
+                  activeOpacity={0.7} 
+                  onPress={() => setShowDeptPicker(true)}
+                  style={[styles.inputContainer, showDeptPicker && styles.inputContainerFocused]}
+                >
+                  <Ionicons name="school-outline" size={20} color={showDeptPicker ? '#6B5DF6' : '#94A3B8'} style={styles.inputIcon} />
+                  <Text style={[styles.input, { color: dept ? COLORS.text : '#94A3B8', paddingTop: Platform.OS === 'ios' ? 15 : 12 }]}>
+                    {dept || 'Select Dept'}
+                  </Text>
+                </TouchableOpacity>
               </View>
 
               <View style={[styles.inputGroup, { flex: 1 }]}>
                 <Text style={styles.label}>Year *</Text>
-                <View style={[styles.inputContainer, focusedInput === 'year' && styles.inputContainerFocused]}>
-                  <Ionicons name="calendar-outline" size={20} color={focusedInput === 'year' ? '#6B5DF6' : '#94A3B8'} style={styles.inputIcon} />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="e.g. 1st Year"
-                    placeholderTextColor="#94A3B8"
-                    value={year}
-                    onChangeText={setYear}
-                    onFocus={() => setFocusedInput('year')}
-                    onBlur={() => setFocusedInput(null)}
-                  />
-                </View>
+                <TouchableOpacity 
+                  activeOpacity={0.7} 
+                  onPress={() => setShowYearPicker(true)}
+                  style={[styles.inputContainer, showYearPicker && styles.inputContainerFocused]}
+                >
+                  <Ionicons name="calendar-outline" size={20} color={showYearPicker ? '#6B5DF6' : '#94A3B8'} style={styles.inputIcon} />
+                  <Text style={[styles.input, { color: year ? COLORS.text : '#94A3B8', paddingTop: Platform.OS === 'ios' ? 15 : 12 }]}>
+                    {year || 'Select Year'}
+                  </Text>
+                </TouchableOpacity>
               </View>
             </View>
 
@@ -300,6 +343,10 @@ export default function ShareScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* PICKER MODALS */}
+      {renderPickerModal(showDeptPicker, setShowDeptPicker, 'Select Department', DEPARTMENTS, dept, setDept)}
+      {renderPickerModal(showYearPicker, setShowYearPicker, 'Select Year', YEARS, year, setYear)}
 
       {/* PROUD CONTRIBUTOR SUCCESS MODAL */}
       <Modal
@@ -671,5 +718,61 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: '700',
     fontSize: 16,
+  },
+  pickerOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  pickerContent: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+    maxHeight: '70%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 10,
+  },
+  pickerHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  pickerTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#0F172A',
+  },
+  pickerCloseBtn: {
+    padding: 4,
+  },
+  pickerList: {
+    marginBottom: 20,
+  },
+  pickerItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  pickerItemSelected: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    borderBottomWidth: 0,
+  },
+  pickerItemText: {
+    fontSize: 15,
+    color: '#475569',
+  },
+  pickerItemTextSelected: {
+    color: '#6B5DF6',
+    fontWeight: '700',
   },
 });
