@@ -14,7 +14,8 @@
         "foregroundImage": "./assets/images/app_icon.png",
         "backgroundColor": "#F8FAFC"
       },
-      "package": "com.sairam.sync"
+      "package": "com.dakhedu.sairamstudyhub",
+      "versionCode": 3
     },
     "web": {
       "favicon": "./assets/images/app_logo.png",

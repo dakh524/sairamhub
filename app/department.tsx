@@ -11,7 +11,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/theme';
-import { fetchAllMaterials } from '../helpers/sheets';
+import { fetchAllMaterials } from '../helpers/api';
 
 const KNOWN_DEPTS = [
   { code: 'COMMON', name: 'Common for all Branches', icon: 'people-outline', color: '#8B5CF6' },
@@ -37,6 +37,13 @@ export default function DepartmentScreen() {
 
   const [departments, setDepartments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const handleDeptPress = (deptCode: string) => {
+    router.push({
+      pathname: '/subject',
+      params: { sem, dept: deptCode, type: resourceType || '' },
+    });
+  };
 
   useEffect(() => {
     async function loadDepts() {
@@ -101,12 +108,7 @@ export default function DepartmentScreen() {
             <TouchableOpacity
               key={dept.code}
               style={styles.card}
-              onPress={() =>
-                router.push({
-                  pathname: '/subject',
-                  params: { sem, dept: dept.code, type: resourceType || '' },
-                })
-              }
+              onPress={() => handleDeptPress(dept.code)}
             >
               <View style={styles.cardLeft}>
                 <View style={[styles.iconBadge, { backgroundColor: dept.color + '15' }]}>

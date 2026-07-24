@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   Text,
@@ -7,10 +7,13 @@ import {
   Linking,
   Share,
   Alert,
+  Modal,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import * as WebBrowser from 'expo-web-browser';
+import ConfettiCannon from 'react-native-confetti-cannon';
 import { COLORS } from '../constants/theme';
 import { Material } from '../types/material';
 
@@ -19,6 +22,8 @@ export default function DetailScreen() {
   const params = useLocalSearchParams();
   const rawData = params.data as string;
   
+  const [showAnimation, setShowAnimation] = useState(false);
+
   if (!rawData) {
     return (
       <SafeAreaView style={styles.container}>
@@ -29,19 +34,22 @@ export default function DetailScreen() {
 
   const material: Material = JSON.parse(rawData);
 
-  const handleOpenDrive = async () => {
+  const openLinkDirectly = async () => {
     try {
-      const supported = await Linking.canOpenURL(material.drive_link);
-      if (supported) {
-        await Linking.openURL(material.drive_link);
-      } else {
-        Alert.alert('Error', 'Unable to open Google Drive Link');
-      }
+      await WebBrowser.openBrowserAsync(material.drive_link);
     } catch (err) {
-      console.error(err);
-      // Fallback open
+      console.error('Error opening URL inside app:', err);
+      // Fallback to normal linking
       Linking.openURL(material.drive_link);
     }
+  };
+
+  const handleOpenDrive = async () => {
+    setShowAnimation(true);
+    setTimeout(() => {
+      setShowAnimation(false);
+      openLinkDirectly();
+    }, 2500); // 2.5 seconds delay to show the message & animation
   };
 
   const handleShare = async () => {
@@ -115,6 +123,20 @@ export default function DetailScreen() {
           <Text style={styles.shareButtonText}>Share Resource</Text>
         </TouchableOpacity>
       </View>
+
+      {/* SHARE ANIMATION MODAL */}
+      <Modal transparent={true} visible={showAnimation} animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Ionicons name="heart" size={60} color="#EF4444" style={{ marginBottom: 16 }} />
+            <Text style={styles.modalTitle}>Help Your Juniors! ❤️</Text>
+            <Text style={styles.modalText}>
+              Don't forget to share materials and contribute to help other students!
+            </Text>
+          </View>
+          {showAnimation && <ConfettiCannon count={100} origin={{x: -10, y: 0}} fallSpeed={2500} fadeOut={true} />}
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -248,5 +270,37 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     fontWeight: 'bold',
     fontSize: 15,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    width: '80%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 28,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: '900',
+    color: '#111827',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  modalText: {
+    fontSize: 16,
+    color: '#4B5563',
+    textAlign: 'center',
+    lineHeight: 24,
+    fontWeight: '500',
   },
 });

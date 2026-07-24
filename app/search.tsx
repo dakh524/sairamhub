@@ -11,7 +11,7 @@ import {
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '../constants/theme';
-import { fetchAllMaterials } from '../helpers/sheets';
+import { fetchAllMaterials } from '../helpers/api';
 import { Material } from '../types/material';
 
 export default function SearchScreen() {

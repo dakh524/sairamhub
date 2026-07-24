@@ -53,6 +53,8 @@ export async function registerForPushNotificationsAsync() {
 }
 
 export async function scheduleLocalNotification(title: string, body: string, data: any = {}) {
+  if (Platform.OS === 'web') return;
+  
   await Notifications.scheduleNotificationAsync({
     content: {
       title: title,

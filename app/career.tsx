@@ -17,7 +17,6 @@ export default function CareerScreen() {
     { title: 'Placement Materials', icon: '💼', desc: 'Resume Templates, HR Questions, Company Preparation', path: 'Placement' },
     { title: 'Aptitude Materials', icon: '🧠', desc: 'Quantitative, Reasoning, Verbal ability practice questions', path: 'Aptitude' },
     { title: 'GATE Materials', icon: '🎓', desc: 'Formula sheets, syllabus keys, previous year mock tests', path: 'GATE' },
-    { title: 'Internship Resources', icon: '🚀', desc: 'Resume building guidelines, roadmaps, project ideas', path: 'Internships' },
     { title: 'Coding Resources', icon: '💻', desc: 'C++, Java, Python, LeetCode patterns & answers', path: 'Coding' },
   ];
 

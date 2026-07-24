@@ -13,7 +13,7 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/theme';
-import { fetchAllMaterials, fetchAnnouncements } from '../helpers/sheets';
+import { fetchAllMaterials, fetchAnnouncements } from '../helpers/api';
 import { Material, Announcement } from '../types/material';
 
 export default function UpdatesScreen() {
@@ -74,11 +74,9 @@ export default function UpdatesScreen() {
         </View>
       ) : (
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-          {/* SECTION 1: LATEST ANNOUNCEMENTS & EVENTS */}
-          <Text style={styles.sectionTitle}>📢 Announcements & Workshops</Text>
-          
-          <View style={styles.announcementTabs}>
-            {(['all', 'announcements', 'workshops'] as const).map((t) => (
+          {/* TAB SELECTORS */}
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[styles.announcementTabs, { marginTop: 12 }]}>
+            {(['all', 'announcements'] as const).map((t) => (
               <TouchableOpacity
                 key={t}
                 style={[
@@ -93,63 +91,97 @@ export default function UpdatesScreen() {
                     updateTab === t && styles.announcementTabLabelActive,
                   ]}
                 >
-                  {t.toUpperCase()}
+                  {t === 'all' ? 'ALL MATERIALS' : t.toUpperCase()}
                 </Text>
               </TouchableOpacity>
             ))}
-          </View>
+          </ScrollView>
 
-          {filteredAnnouncements.map((item) => {
-            const isExpanded = expandedAnnouncementId === item.id;
-            return (
-              <TouchableOpacity
-                key={item.id}
-                style={styles.announcementCard}
-                onPress={() => setExpandedAnnouncementId(isExpanded ? null : item.id)}
-                activeOpacity={0.9}
-              >
-                <View style={styles.announcementHeader}>
-                  <View style={[
-                    styles.announcementBadge,
-                    {
-                      backgroundColor: item.type === 'workshops' ? '#F5F3FF' : '#FEF3C7',
-                    },
-                  ]}>
-                    <Text style={[
-                      styles.announcementBadgeText,
-                      {
-                        color: item.type === 'workshops' ? COLORS.secondary : COLORS.warning,
-                      },
-                    ]}>
-                      {item.type.toUpperCase()}
-                    </Text>
-                  </View>
-                  <Text style={styles.announcementDate}>{item.date}</Text>
-                </View>
-                <Text style={styles.announcementTitle}>{item.title}</Text>
-                <Text style={styles.announcementDesc}>{item.desc}</Text>
-
-                {isExpanded && (
-                  <View style={styles.expandedContent}>
-                    <View style={styles.divider} />
-                    <Text style={styles.detailsLabel}>📍 Venue/Platform:</Text>
-                    <Text style={styles.detailsText}>{item.venue}</Text>
+          {/* ANNOUNCEMENTS CONTENT */}
+          {updateTab === 'announcements' && (
+            <>
+              <Text style={[styles.sectionTitle, { marginTop: 12, marginBottom: 12 }]}>📢 Announcements</Text>
+              {announcements.filter(a => a.type === 'announcements').map((item) => {
+                const getThemeColor = () => {
+                  if (item.type === 'workshops') return '#8B5CF6';
+                  if (item.title.toLowerCase().includes('important')) return '#EF4444';
+                  return '#3B82F6';
+                };
+                const themeColor = getThemeColor();
+                
+                return (
+                  <View
+                    key={item.id}
+                    style={[
+                      styles.announcementCard,
+                      { 
+                        backgroundColor: '#FFFFFF', 
+                        borderWidth: 1,
+                        borderColor: '#F3F4F6',
+                        borderRadius: 16,
+                        padding: 16,
+                        marginBottom: 16,
+                        shadowColor: '#000',
+                        shadowOffset: { width: 0, height: 2 },
+                        shadowOpacity: 0.05,
+                        shadowRadius: 10,
+                        elevation: 2,
+                      }
+                    ]}
+                  >
+                    <View style={styles.announcementHeader}>
+                      <View style={[
+                        styles.announcementBadge,
+                        {
+                          backgroundColor: themeColor + '1A',
+                          paddingHorizontal: 10,
+                          paddingVertical: 6,
+                          borderRadius: 8,
+                        },
+                      ]}>
+                        <Text style={[
+                          styles.announcementBadgeText,
+                          {
+                            color: themeColor,
+                            fontWeight: '800',
+                            fontSize: 10,
+                          },
+                        ]}>
+                          {item.type.toUpperCase()}
+                        </Text>
+                      </View>
+                      <Text style={[styles.announcementDate, { color: '#6B7280', fontSize: 12, fontWeight: '500' }]}>{item.date}</Text>
+                    </View>
                     
-                    <Text style={styles.detailsLabel}>📝 Event Details:</Text>
-                    <Text style={styles.detailsText}>{item.details}</Text>
+                    <Text style={[styles.announcementTitle, { fontSize: 17, fontWeight: '800', color: '#111827', marginTop: 8, marginBottom: 6 }]}>{item.title}</Text>
+                    <Text style={[styles.announcementDesc, { fontSize: 14, color: '#4B5563', lineHeight: 22 }]}>{item.details || item.desc}</Text>
                     
-                    <TouchableOpacity style={styles.shareBtn} onPress={() => handleShareAnnouncement(item)}>
-                      <Ionicons name="share-social-outline" size={16} color={COLORS.white} style={{ marginRight: 6 }} />
-                      <Text style={styles.shareBtnText}>Share Event</Text>
-                    </TouchableOpacity>
+                    <View style={{ marginTop: 16, flexDirection: 'row', justifyContent: 'flex-start' }}>
+                      <TouchableOpacity
+                        style={{
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          backgroundColor: themeColor + '1A',
+                          paddingHorizontal: 12,
+                          paddingVertical: 8,
+                          borderRadius: 8,
+                        }}
+                        onPress={() => handleShareAnnouncement(item)}
+                      >
+                        <Ionicons name="share-social-outline" size={16} color={themeColor} style={{ marginRight: 6 }} />
+                        <Text style={{ color: themeColor, fontWeight: '700', fontSize: 13 }}>Share Event</Text>
+                      </TouchableOpacity>
+                    </View>
                   </View>
-                )}
-              </TouchableOpacity>
-            );
-          })}
+                );
+              })}
+            </>
+          )}
 
-          {/* SECTION 2: LATEST MATERIAL UPLOADS (FROM GOOGLE SHEETS) */}
-          <Text style={[styles.sectionTitle, { marginTop: 24 }]}>📂 Latest Document Uploads</Text>
+          {/* MATERIALS CONTENT */}
+          {updateTab === 'all' && (
+            <>
+              <Text style={[styles.sectionTitle, { marginTop: 12 }]}>📂 Latest Document Uploads</Text>
           {materials.length === 0 ? (
             <View style={styles.emptyUploadBox}>
               <Text style={styles.emptyUploadText}>No recent document uploads found in database.</Text>
@@ -178,6 +210,8 @@ export default function UpdatesScreen() {
                 </View>
               </TouchableOpacity>
             ))
+          )}
+            </>
           )}
         </ScrollView>
       )}

@@ -20,11 +20,12 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import ConfettiCannon from 'react-native-confetti-cannon';
+import { LinearGradient } from 'expo-linear-gradient';
 import { COLORS } from '../constants/theme';
 
 // Removed Image.resolveAssetSource due to React Native Web incompatibility
 
-import { fetchAllMaterials, fetchAnnouncements } from '../helpers/sheets';
+import { fetchAllMaterials, fetchAnnouncements } from '../helpers/api';
 import { registerForPushNotificationsAsync, scheduleLocalNotification } from '../helpers/notifications';
 import { Material, Announcement } from '../types/material';
 
@@ -74,6 +75,23 @@ export default function MainApp() {
   const [bellProgressPct, setBellProgressPct] = useState(0);
   const [isManageModalVisible, setIsManageModalVisible] = useState(false);
   const [newPeriod, setNewPeriod] = useState({ name: '', startH: '', startM: '', endH: '', endM: '' });
+
+  const [userName, setUserName] = useState<string>('Future Engineer');
+  const [userDept, setUserDept] = useState<string>('');
+
+  useEffect(() => {
+    async function loadUserData() {
+      try {
+        const name = await AsyncStorage.getItem('userName');
+        const dept = await AsyncStorage.getItem('userDept');
+        if (name) setUserName(name);
+        if (dept) setUserDept(dept);
+      } catch (err) {
+        console.error('Failed to load user info:', err);
+      }
+    }
+    loadUserData();
+  }, []);
 
   useEffect(() => {
     const loadSchedule = async () => {
@@ -347,49 +365,208 @@ export default function MainApp() {
           <ScrollView showsVerticalScrollIndicator={false}>
             {activeTab === 'home' && (
               <View style={styles.tabContent}>
-                {/* WELCOME SECTION */}
-                <View style={styles.welcomeSection}>
-                  <Text style={styles.welcomeTitle}>Welcome, Future Engineer! 👋</Text>
-                  <Text style={styles.welcomeSubtitle}>
-                    Access everything you need to learn, prepare and succeed.
-                  </Text>
+                {/* ENERGETIC WELCOME GREETING */}
+                <View style={styles.proWelcomeRow}>
+                  <View style={{ flex: 1 }}>
+                    <View style={styles.streakBadgeRow}>
+                      <Text style={styles.streakBadgeText}>🔥 5 DAY STREAK</Text>
+                      <Text style={styles.levelBadgeText}>⚡ LVL 4 HERO</Text>
+                    </View>
+                    <Text style={styles.proWelcomeTitle}>Let's Crush It, {userName}! 🚀</Text>
+                    <Text style={styles.proWelcomeSubtitle}>
+                      {userDept ? `${userDept} Department • ` : ''}Sairam Hub Learning Portal
+                    </Text>
+                  </View>
+                  <View style={styles.userAvatarBadgeGlow}>
+                    <Text style={styles.userAvatarText}>{userName.charAt(0).toUpperCase()}</Text>
+                  </View>
                 </View>
 
+                {/* DAILY MOMENTUM TICKER */}
+                <View style={styles.momentumBar}>
+                  <View style={styles.momentumItem}>
+                    <Ionicons name="flame" size={16} color="#FF5E36" />
+                    <Text style={styles.momentumText}>5 Streak</Text>
+                  </View>
+                  <View style={styles.momentumDivider} />
+                  <View style={styles.momentumItem}>
+                    <Ionicons name="document-text" size={16} color="#3B82F6" />
+                    <Text style={styles.momentumText}>14 Uploads</Text>
+                  </View>
+                  <View style={styles.momentumDivider} />
+                  <View style={styles.momentumItem}>
+                    <Ionicons name="trophy" size={16} color="#F59E0B" />
+                    <Text style={styles.momentumText}>Top 5%</Text>
+                  </View>
+                </View>
 
-
-                {/* SEARCH BAR */}
+                {/* PRO SEARCH BAR */}
                 <TouchableOpacity
-                  style={styles.searchBarContainer}
+                  style={styles.proSearchBar}
                   onPress={() => router.push('/search')}
                   activeOpacity={0.9}
                 >
-                  <Text style={styles.searchPlaceholder}>Search subjects, materials, PYQ, etc...</Text>
-                  <View>
-                    <Ionicons name="search-outline" size={18} color={COLORS.textSecondary} />
+                  <Ionicons name="search" size={20} color="#7C3AED" style={{ marginRight: 10 }} />
+                  <Text style={styles.proSearchPlaceholder}>Search subjects, materials, PYQs...</Text>
+                  <View style={styles.searchFilterBadge}>
+                    <Ionicons name="options" size={16} color="#FFFFFF" />
                   </View>
                 </TouchableOpacity>
 
-                {/* HERO BANNER */}
-                <View style={[styles.heroCard, { padding: 0, borderWidth: 0, overflow: 'hidden', aspectRatio: width < 600 ? 2.0 : 2.6 }]}>
-                  <Image 
-                    source={require('../assets/images/hero_banner.jpg')} 
-                    style={{ width: '100%', height: '100%', resizeMode: 'cover' }} 
-                  />
+                {/* VIBRANT HERO BANNER - LIVE CLASS TRACKER */}
+                <LinearGradient
+                  colors={['#8B5CF6', '#EC4899', '#3B82F6']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.proHeroCard}
+                >
+                  <View style={styles.heroTopBadgeRow}>
+                    <View style={styles.liveIndicatorChip}>
+                      <View style={styles.liveDot} />
+                      <Text style={styles.liveChipText}>IN SESSION</Text>
+                    </View>
+                    <TouchableOpacity onPress={() => setIsManageModalVisible(true)} style={styles.heroSettingsBtn}>
+                      <Ionicons name="time" size={18} color="#FFFFFF" />
+                    </TouchableOpacity>
+                  </View>
+
+                  <Text style={styles.heroPeriodTitle}>
+                    {currentPeriod ? currentPeriod.name : 'No Active Class'}
+                  </Text>
+                  
+                  <Text style={styles.heroPeriodSubtitle}>
+                    {currentPeriod 
+                      ? `${currentPeriod.startH.toString().padStart(2,'0')}:${currentPeriod.startM.toString().padStart(2,'0')} - ${currentPeriod.endH.toString().padStart(2,'0')}:${currentPeriod.endM.toString().padStart(2,'0')}`
+                      : nextPeriod ? `Next: ${nextPeriod.name}` : 'Enjoy your break! 🔥'}
+                  </Text>
+
+                  {/* PROGRESS BAR */}
+                  <View style={styles.heroProgressTrack}>
+                    <View style={[styles.heroProgressFill, { width: `${bellProgressPct}%` }]} />
+                  </View>
+
+                  <View style={styles.heroTimeRow}>
+                    <Text style={styles.heroTimeLeftText}>{timeLeftStr}</Text>
+                    <TouchableOpacity 
+                      style={styles.heroActionChip}
+                      onPress={() => router.push('/share')}
+                    >
+                      <Ionicons name="cloud-upload" size={15} color="#FFFFFF" style={{ marginRight: 4 }} />
+                      <Text style={styles.heroActionChipText}>+ Share Notes</Text>
+                    </TouchableOpacity>
+                  </View>
+                </LinearGradient>
+
+                {/* VIBRANT QUICK ACTIONS GRID */}
+                <Text style={styles.sectionTitle}>Quick Actions</Text>
+                <View style={styles.quickGrid}>
+                  <TouchableOpacity 
+                    style={styles.quickCardWrapper}
+                    onPress={() => setActiveTab('materials')}
+                    activeOpacity={0.88}
+                  >
+                    <LinearGradient
+                      colors={['#3B82F6', '#1D4ED8']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={styles.quickCardGradient}
+                    >
+                      <View style={styles.quickIconBoxVibrant}>
+                        <Ionicons name="book" size={22} color="#3B82F6" />
+                      </View>
+                      <Text style={styles.quickCardTitleWhite}>Semesters</Text>
+                      <Text style={styles.quickCardSubWhite}>Notes & PYQs</Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity 
+                    style={styles.quickCardWrapper}
+                    onPress={() => router.push('/career')}
+                    activeOpacity={0.88}
+                  >
+                    <LinearGradient
+                      colors={['#8B5CF6', '#6D28D9']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={styles.quickCardGradient}
+                    >
+                      <View style={styles.quickIconBoxVibrant}>
+                        <Ionicons name="rocket" size={22} color="#8B5CF6" />
+                      </View>
+                      <Text style={styles.quickCardTitleWhite}>Career Hub</Text>
+                      <Text style={styles.quickCardSubWhite}>Jobs & Coding</Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity 
+                    style={styles.quickCardWrapper}
+                    onPress={() => router.push('/cgpa')}
+                    activeOpacity={0.88}
+                  >
+                    <LinearGradient
+                      colors={['#10B981', '#047857']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={styles.quickCardGradient}
+                    >
+                      <View style={styles.quickIconBoxVibrant}>
+                        <Ionicons name="calculator" size={22} color="#10B981" />
+                      </View>
+                      <Text style={styles.quickCardTitleWhite}>CGPA Calc</Text>
+                      <Text style={styles.quickCardSubWhite}>Grade Predictor</Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity 
+                    style={styles.quickCardWrapper}
+                    onPress={() => setActiveTab('more')}
+                    activeOpacity={0.88}
+                  >
+                    <LinearGradient
+                      colors={['#F59E0B', '#D97706']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={styles.quickCardGradient}
+                    >
+                      <View style={styles.quickIconBoxVibrant}>
+                        <Ionicons name="game-controller" size={22} color="#F59E0B" />
+                      </View>
+                      <Text style={styles.quickCardTitleWhite}>Fun Zone</Text>
+                      <Text style={styles.quickCardSubWhite}>Games & Tools</Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
                 </View>
 
-                {/* TODAY'S WORKS (Reminders & Tasks) */}
-                <Text style={styles.sectionTitle}>Today's Tasks</Text>
+                {/* TODAY'S TASKS */}
+                <View style={styles.sectionHeaderRow}>
+                  <Text style={styles.sectionTitle}>Today's Tasks</Text>
+                  <Text style={styles.todoCountBadge}>
+                    {todoList.filter(t => t.completed).length}/{todoList.length} Done
+                  </Text>
+                </View>
+
                 <View style={styles.todoContainer}>
+                  {/* PROGRESS LINE */}
+                  <View style={styles.todoProgressBarTrack}>
+                    <View 
+                      style={[
+                        styles.todoProgressBarFill, 
+                        { width: `${todoList.length ? (todoList.filter(t => t.completed).length / todoList.length) * 100 : 0}%` }
+                      ]} 
+                    />
+                  </View>
+
                   {/* INPUT ROW */}
                   <View style={styles.todoInputRow}>
                     <TextInput
                       style={styles.todoInput}
-                      placeholder="Add a new task..."
+                      placeholder="Write a new task..."
                       placeholderTextColor={COLORS.textSecondary}
                       value={newTodoText}
                       onChangeText={setNewTodoText}
                     />
                     <TouchableOpacity style={styles.todoAddButton} onPress={addTodo}>
+                      <Ionicons name="add" size={18} color="#FFFFFF" style={{ marginRight: 2 }} />
                       <Text style={styles.todoAddButtonText}>Add</Text>
                     </TouchableOpacity>
                   </View>
@@ -404,8 +581,8 @@ export default function MainApp() {
                       >
                         <Ionicons
                           name={todo.completed ? "checkmark-circle" : "ellipse-outline"}
-                          size={20}
-                          color={todo.completed ? COLORS.success : COLORS.primary}
+                          size={22}
+                          color={todo.completed ? "#10B981" : COLORS.primary}
                           style={{ marginRight: 12 }}
                         />
                         <Text style={[
@@ -422,12 +599,11 @@ export default function MainApp() {
                   ))}
                 </View>
 
-
-                {/* CAREER RESOURCES */}
+                {/* CAREER RESOURCES CAROUSEL */}
                 <View style={styles.sectionHeaderRow}>
-                  <Text style={styles.sectionTitle}>Career Resources</Text>
+                  <Text style={styles.sectionTitle}>Career & Skill Hub</Text>
                   <TouchableOpacity onPress={() => router.push('/career')}>
-                    <Text style={styles.viewAllText}>View All</Text>
+                    <Text style={styles.viewAllText}>View All →</Text>
                   </TouchableOpacity>
                 </View>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
@@ -457,7 +633,7 @@ export default function MainApp() {
 
                   <TouchableOpacity
                     style={styles.horizontalCard}
-                    onPress={() => router.push({ pathname: '/career-detail', params: { category: 'Internships' } })}
+                    onPress={() => Linking.openURL('https://www.dakhedusolutions.in/internship')}
                   >
                     <Ionicons name="paper-plane-outline" size={24} color="#F59E0B" style={styles.careerIcon} />
                     <Text style={styles.careerLabel}>Internships</Text>
@@ -466,9 +642,9 @@ export default function MainApp() {
 
                 {/* RECENTLY ADDED */}
                 <View style={styles.sectionHeaderRow}>
-                  <Text style={styles.sectionTitle}>Recently Added</Text>
+                  <Text style={styles.sectionTitle}>Recently Uploaded</Text>
                   <TouchableOpacity onPress={() => router.push('/search')}>
-                    <Text style={styles.viewAllText}>View All</Text>
+                    <Text style={styles.viewAllText}>Explore All →</Text>
                   </TouchableOpacity>
                 </View>
                 {latestUploads.length === 0 ? (
@@ -483,7 +659,13 @@ export default function MainApp() {
                       onPress={() => router.push({ pathname: '/detail', params: { data: JSON.stringify(item) } })}
                     >
                       <View style={styles.recentUploadLeft}>
-                        <Ionicons name="document-text-outline" size={22} color={COLORS.primary} style={{ marginRight: 12 }} />
+                        <View style={[styles.docTypeBadge, { backgroundColor: item.material_type?.toLowerCase().includes('pyq') ? '#FEF3C7' : '#EEF2FF' }]}>
+                          <Ionicons 
+                            name={item.material_type?.toLowerCase().includes('pyq') ? "help-circle-outline" : "document-text-outline"} 
+                            size={20} 
+                            color={item.material_type?.toLowerCase().includes('pyq') ? "#D97706" : COLORS.primary} 
+                          />
+                        </View>
                         <View style={styles.recentUploadInfo}>
                           <Text style={styles.recentUploadTitle} numberOfLines={1}>
                             {item.title}
@@ -500,8 +682,6 @@ export default function MainApp() {
                     </TouchableOpacity>
                   ))
                 )}
-
-
               </View>
             )}
 
@@ -556,37 +736,89 @@ export default function MainApp() {
 
             {/* TAB: CAREER HUB */}
             {activeTab === 'career' && (
-              <View style={styles.tabContent}>
-                <Text style={styles.tabHeaderTitle}>Career Hub</Text>
-                <Text style={styles.tabHeaderSubtitle}>Prepare for recruitment drives and placements</Text>
+              <ScrollView showsVerticalScrollIndicator={false} style={styles.tabContent}>
+                
+                {/* 1. HERO BANNER */}
+                <LinearGradient
+                  colors={['#1E1B4B', '#4C1D95']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={{ borderRadius: 24, padding: 24, marginBottom: 24, position: 'relative', overflow: 'hidden' }}
+                >
+                  <View style={{ position: 'absolute', right: -20, top: -20, width: 150, height: 150, backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 75 }} />
+                  <View style={{ position: 'absolute', right: 40, bottom: -40, width: 100, height: 100, backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 50 }} />
+                  
+                  <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: 14, fontWeight: '600', marginBottom: 8 }}>Welcome back! 👋</Text>
+                  <Text style={{ color: '#FFFFFF', fontSize: 26, fontWeight: '800', marginBottom: 12, lineHeight: 32 }}>
+                    Your <Text style={{ color: '#C084FC' }}>Career</Text> Journey Starts Here!
+                  </Text>
+                  <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13, marginBottom: 24, maxWidth: '70%', lineHeight: 20 }}>
+                    Top-quality resources to crack placements and competitive exams.
+                  </Text>
+                  
 
-                {[
-                  { title: 'Placement Materials', icon: 'briefcase-outline', desc: 'Resume Templates, HR Questions, Company Preparation', url: 'https://www.geeksforgeeks.org/placements-gq/', color: COLORS.primary },
-                  { title: 'Aptitude Materials', icon: 'bulb-outline', desc: 'Quantitative, Reasoning, Verbal ability practice questions', url: 'https://www.indiabix.com/', color: COLORS.secondary },
-                  { title: 'GATE Materials', icon: 'school-outline', desc: 'Formula sheets, syllabus keys, previous year mock tests', url: 'https://gateoverflow.in/', color: '#EF4444' },
-                  { title: 'Internship Resources', icon: 'paper-plane-outline', desc: 'Resume building guidelines, roadmaps, project ideas', url: 'https://internshala.com/', color: '#F59E0B' },
-                  { title: 'Coding Resources', icon: 'code-slash-outline', desc: 'C++, Java, Python, LeetCode patterns & answers', url: 'https://leetcode.com/problemset/all/', color: '#10B981' },
-                ].map((item, idx) => (
-                  <TouchableOpacity
-                    key={idx}
-                    style={styles.careerHubCard}
-                    onPress={() => Linking.openURL(item.url)}
-                  >
-                    <View style={styles.careerHubCardLeft}>
-                      <View style={[styles.careerHubIconBadge, { backgroundColor: item.color + '15' }]}>
+                </LinearGradient>
+
+                {/* 2. EXPLORE CATEGORIES (2x2 Grid) */}
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                  <Text style={{ fontSize: 18, fontWeight: '800', color: '#111827' }}>Explore Categories</Text>
+                </View>
+                
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 24 }}>
+                  {[
+                    { title: 'Placement', title2: 'Materials', icon: 'briefcase-outline', desc1: 'Resume, HR Questions', desc2: 'Interview Prep & more', bg: '#EEF2FF', color: '#4F46E5', tint: '#E0E7FF' },
+                    { title: 'Aptitude', title2: 'Materials', icon: 'bulb-outline', desc1: 'Quantitative, Reasoning', desc2: 'Verbal & more', bg: '#FDF4FF', color: '#C026D3', tint: '#FAE8FF' },
+                    { title: 'GATE', title2: 'Materials', icon: 'school-outline', desc1: 'Formulas, Previous Years', desc2: 'Mock Tests & more', bg: '#FFF7ED', color: '#EA580C', tint: '#FFEDD5' },
+                    { title: 'Coding', title2: 'Materials', icon: 'code-slash-outline', desc1: 'C++, Java, DSA', desc2: 'LeetCode & more', bg: '#ECFDF5', color: '#059669', tint: '#D1FAE5' },
+                  ].map((item, idx) => (
+                    <TouchableOpacity
+                      key={idx}
+                      style={{ width: '48%', backgroundColor: '#FFFFFF', borderRadius: 20, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: item.tint, shadowColor: item.color, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 }}
+                      onPress={() => router.push({ pathname: '/career-detail', params: { category: item.title } })}
+                    >
+                      <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: item.bg, justifyContent: 'center', alignItems: 'center', marginBottom: 12 }}>
                         <Ionicons name={item.icon as any} size={22} color={item.color} />
                       </View>
-                      <View style={styles.careerHubTextContainer}>
-                        <Text style={styles.careerHubTitle}>{item.title}</Text>
-                        <Text style={styles.careerHubDesc} numberOfLines={2}>
-                          {item.desc}
-                        </Text>
+                      <Text style={{ fontSize: 15, fontWeight: '800', color: '#1F2937' }}>{item.title}</Text>
+                      <Text style={{ fontSize: 15, fontWeight: '800', color: '#1F2937', marginBottom: 8 }}>{item.title2}</Text>
+                      <Text style={{ fontSize: 11, color: '#6B7280', lineHeight: 16 }}>{item.desc1}</Text>
+                      <Text style={{ fontSize: 11, color: '#6B7280', lineHeight: 16, marginBottom: 16 }}>{item.desc2}</Text>
+                      <View style={{ alignSelf: 'flex-end', backgroundColor: item.bg, width: 24, height: 24, borderRadius: 12, justifyContent: 'center', alignItems: 'center' }}>
+                        <Ionicons name="chevron-forward" size={14} color={item.color} />
                       </View>
-                    </View>
-                    <Ionicons name="chevron-forward" size={16} color={COLORS.textSecondary} />
-                  </TouchableOpacity>
-                ))}
-              </View>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                {/* 3. APTITUDE ROADMAP */}
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                  <Text style={{ fontSize: 18, fontWeight: '800', color: '#111827' }}>Aptitude Roadmap to Clear</Text>
+                </View>
+                
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 32, paddingBottom: 10 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'flex-start', paddingHorizontal: 8 }}>
+                    {[
+                      { step: '01', title: 'Quants Basics', desc: 'Learn formulas for percentages, profit/loss time/work.', color: '#6366F1' },
+                      { step: '02', title: 'Logical Reasoning', desc: 'Practice patterns, syllogisms, and puzzles.', color: '#EC4899' },
+                      { step: '03', title: 'Speed & Accuracy', desc: 'Solve questions under 1 minute using shortcuts.', color: '#F59E0B' },
+                      { step: '04', title: 'Mock Tests', desc: 'Take full-length mock exams regularly.', color: '#10B981' },
+                    ].map((item, idx) => (
+                      <View key={idx} style={{ width: 110, alignItems: 'center', marginRight: idx === 3 ? 0 : 20, position: 'relative' }}>
+                        {idx !== 3 && (
+                          <View style={{ position: 'absolute', top: 22, left: 65, right: -45, height: 2, borderStyle: 'dashed', borderWidth: 1, borderColor: '#D1D5DB', zIndex: -1 }} />
+                        )}
+                        <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: item.color, justifyContent: 'center', alignItems: 'center', marginBottom: 12, borderWidth: 4, borderColor: item.color + '20' }}>
+                          <Text style={{ color: '#FFFFFF', fontWeight: 'bold', fontSize: 16 }}>{item.step}</Text>
+                        </View>
+                        <Text style={{ fontSize: 12, fontWeight: 'bold', color: '#1F2937', textAlign: 'center', marginBottom: 4 }}>{item.title}</Text>
+                        <Text style={{ fontSize: 10, color: '#6B7280', textAlign: 'center', lineHeight: 14 }}>{item.desc}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </ScrollView>
+
+
+              </ScrollView>
             )}
 
             {/* TAB: UPDATES */}
@@ -594,10 +826,9 @@ export default function MainApp() {
               <View style={styles.tabContent}>
                 <Text style={styles.tabHeaderTitle}>Updates & Uploads</Text>
                 
-                {/* SECTION 1: ANNOUNCEMENTS */}
-                <Text style={[styles.sectionTitle, { marginTop: 12 }]}>📢 Announcements & Workshops</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.announcementTabs}>
-                  {(['all', 'announcements', 'workshops'] as const).map((t) => (
+                {/* TAB SELECTORS */}
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[styles.announcementTabs, { marginTop: 12 }]}>
+                  {(['all', 'announcements'] as const).map((t) => (
                     <TouchableOpacity
                       key={t}
                       style={[
@@ -612,66 +843,97 @@ export default function MainApp() {
                           updateTab === t && styles.announcementTabLabelActive,
                         ]}
                       >
-                        {t.toUpperCase()}
+                        {t === 'all' ? 'ALL MATERIALS' : t.toUpperCase()}
                       </Text>
                     </TouchableOpacity>
                   ))}
                 </ScrollView>
 
-                {filteredAnnouncements.map((item) => {
-                  const isExpanded = expandedAnnouncementId === item.id;
-                  return (
-                    <TouchableOpacity
-                      key={item.id}
-                      style={styles.announcementCard}
-                      onPress={() => setExpandedAnnouncementId(isExpanded ? null : item.id)}
-                      activeOpacity={0.9}
-                    >
-                      <View style={styles.announcementHeader}>
-                        <View style={[
-                          styles.announcementBadge,
-                          {
-                            backgroundColor: item.type === 'workshops' ? '#F5F3FF' : '#FEF3C7',
-                          },
-                        ]}>
-                          <Text style={[
-                            styles.announcementBadgeText,
-                            {
-                              color: item.type === 'workshops' ? COLORS.secondary : COLORS.warning,
-                            },
-                          ]}>
-                            {item.type.toUpperCase()}
-                          </Text>
-                        </View>
-                        <Text style={styles.announcementDate}>{item.date}</Text>
-                      </View>
-                      <Text style={styles.announcementTitle}>{item.title}</Text>
-                      <Text style={styles.announcementDesc}>{item.desc}</Text>
-
-                      {isExpanded && (
-                        <View style={styles.expandedContent}>
-                          <View style={styles.divider} />
-                          <Text style={styles.detailsLabel}>📍 Venue/Platform:</Text>
-                          <Text style={styles.detailsText}>{item.venue}</Text>
+                {/* ANNOUNCEMENTS CONTENT */}
+                {updateTab === 'announcements' && (
+                  <>
+                    <Text style={[styles.sectionTitle, { marginTop: 12, marginBottom: 12 }]}>📢 Announcements</Text>
+                    {announcements.filter(a => a.type === 'announcements').map((item) => {
+                      const getThemeColor = () => {
+                        if (item.type === 'workshops') return '#8B5CF6';
+                        if (item.title.toLowerCase().includes('important')) return '#EF4444';
+                        return '#3B82F6';
+                      };
+                      const themeColor = getThemeColor();
+                      
+                      return (
+                        <View
+                          key={item.id}
+                          style={[
+                            styles.announcementCard,
+                            { 
+                              backgroundColor: '#FFFFFF', 
+                              borderWidth: 1,
+                              borderColor: '#F3F4F6',
+                              borderRadius: 16,
+                              padding: 16,
+                              marginBottom: 16,
+                              shadowColor: '#000',
+                              shadowOffset: { width: 0, height: 2 },
+                              shadowOpacity: 0.05,
+                              shadowRadius: 10,
+                              elevation: 2,
+                            }
+                          ]}
+                        >
+                          <View style={styles.announcementHeader}>
+                            <View style={[
+                              styles.announcementBadge,
+                              {
+                                backgroundColor: themeColor + '1A', 
+                                paddingHorizontal: 10,
+                                paddingVertical: 6,
+                                borderRadius: 8,
+                              },
+                            ]}>
+                              <Text style={[
+                                styles.announcementBadgeText,
+                                {
+                                  color: themeColor,
+                                  fontWeight: '800',
+                                  fontSize: 10,
+                                },
+                              ]}>
+                                {item.type.toUpperCase()}
+                              </Text>
+                            </View>
+                            <Text style={[styles.announcementDate, { color: '#6B7280', fontSize: 12, fontWeight: '500' }]}>{item.date}</Text>
+                          </View>
                           
-                          <Text style={styles.detailsLabel}>📝 Event Details:</Text>
-                          <Text style={styles.detailsText}>{item.details}</Text>
+                          <Text style={[styles.announcementTitle, { fontSize: 17, fontWeight: '800', color: '#111827', marginTop: 8, marginBottom: 6 }]}>{item.title}</Text>
+                          <Text style={[styles.announcementDesc, { fontSize: 14, color: '#4B5563', lineHeight: 22 }]}>{item.details || item.desc}</Text>
                           
-                          <TouchableOpacity
-                            style={styles.shareBtn}
-                            onPress={() => handleShareAnnouncement(item)}
-                          >
-                            <Ionicons name="share-social-outline" size={16} color={COLORS.white} style={{ marginRight: 6 }} />
-                            <Text style={styles.shareBtnText}>Share Event</Text>
-                          </TouchableOpacity>
+                          <View style={{ marginTop: 16, flexDirection: 'row', justifyContent: 'flex-start' }}>
+                            <TouchableOpacity
+                              style={{
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                backgroundColor: themeColor + '1A',
+                                paddingHorizontal: 12,
+                                paddingVertical: 8,
+                                borderRadius: 8,
+                              }}
+                              onPress={() => handleShareAnnouncement(item)}
+                            >
+                              <Ionicons name="share-social-outline" size={16} color={themeColor} style={{ marginRight: 6 }} />
+                              <Text style={{ color: themeColor, fontWeight: '700', fontSize: 13 }}>Share Event</Text>
+                            </TouchableOpacity>
+                          </View>
                         </View>
-                      )}
-                    </TouchableOpacity>
-                  );
-                })}
+                      );
+                    })}
+                  </>
+                )}
 
-                {/* SECTION 2: LIVE UPLOADS */}
-                <Text style={[styles.sectionTitle, { marginTop: 24 }]}>📂 Latest Document Uploads</Text>
+                {/* MATERIALS CONTENT */}
+                {updateTab === 'all' && (
+                  <>
+                    <Text style={[styles.sectionTitle, { marginTop: 12 }]}>📂 Latest Document Uploads</Text>
                 {materials.length === 0 ? (
                   <View style={styles.emptyRecentBox}>
                     <Text style={styles.emptyRecentText}>No uploads synced from database yet.</Text>
@@ -700,6 +962,8 @@ export default function MainApp() {
                       </View>
                     </TouchableOpacity>
                   ))
+                )}
+                  </>
                 )}
               </View>
             )}
@@ -943,14 +1207,14 @@ export default function MainApp() {
               
               <View style={styles.modalAddContainer}>
                 <Text style={{ fontWeight: 'bold', marginBottom: 12 }}>Add New Period</Text>
-                <TextInput placeholder="Period Name (e.g. Period 1, Lunch)" style={styles.modalInput} value={newPeriod.name} onChangeText={(t) => setNewPeriod({...newPeriod, name: t})} />
+                <TextInput placeholder="Period Name (e.g. Period 1, Lunch)" style={styles.modalInput} value={newPeriod.name} onChangeText={(t: string) => setNewPeriod({...newPeriod, name: t})} />
                 <View style={{ flexDirection: 'row', gap: 8 }}>
-                  <TextInput placeholder="Start H (24hr)" style={[styles.modalInput, { flex: 1 }]} keyboardType="numeric" value={newPeriod.startH} onChangeText={(t) => setNewPeriod({...newPeriod, startH: t})} />
-                  <TextInput placeholder="Start M" style={[styles.modalInput, { flex: 1 }]} keyboardType="numeric" value={newPeriod.startM} onChangeText={(t) => setNewPeriod({...newPeriod, startM: t})} />
+                  <TextInput placeholder="Start H (24hr)" style={[styles.modalInput, { flex: 1 }]} keyboardType="numeric" value={newPeriod.startH} onChangeText={(t: string) => setNewPeriod({...newPeriod, startH: t})} />
+                  <TextInput placeholder="Start M" style={[styles.modalInput, { flex: 1 }]} keyboardType="numeric" value={newPeriod.startM} onChangeText={(t: string) => setNewPeriod({...newPeriod, startM: t})} />
                 </View>
                 <View style={{ flexDirection: 'row', gap: 8 }}>
-                  <TextInput placeholder="End H (24hr)" style={[styles.modalInput, { flex: 1 }]} keyboardType="numeric" value={newPeriod.endH} onChangeText={(t) => setNewPeriod({...newPeriod, endH: t})} />
-                  <TextInput placeholder="End M" style={[styles.modalInput, { flex: 1 }]} keyboardType="numeric" value={newPeriod.endM} onChangeText={(t) => setNewPeriod({...newPeriod, endM: t})} />
+                  <TextInput placeholder="End H (24hr)" style={[styles.modalInput, { flex: 1 }]} keyboardType="numeric" value={newPeriod.endH} onChangeText={(t: string) => setNewPeriod({...newPeriod, endH: t})} />
+                  <TextInput placeholder="End M" style={[styles.modalInput, { flex: 1 }]} keyboardType="numeric" value={newPeriod.endM} onChangeText={(t: string) => setNewPeriod({...newPeriod, endM: t})} />
                 </View>
                 <TouchableOpacity onPress={addPeriod} style={styles.modalAddBtn}>
                   <Text style={{ color: COLORS.white, fontWeight: 'bold' }}>+ Add to Schedule</Text>
@@ -1037,75 +1301,291 @@ const styles = StyleSheet.create({
   tabContent: {
     padding: 16,
   },
-  welcomeSection: {
-    marginBottom: 16,
+  proWelcomeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
   },
-  welcomeTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: COLORS.text,
+  streakBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     marginBottom: 4,
   },
-  welcomeSubtitle: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-    lineHeight: 20,
+  streakBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#FF5E36',
+    backgroundColor: '#FFF0ED',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    overflow: 'hidden',
   },
-  searchBarContainer: {
-    flexDirection: 'row',
-    backgroundColor: COLORS.card,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+  levelBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#8B5CF6',
+    backgroundColor: '#F3E8FF',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  proWelcomeTitle: {
+    fontSize: 23,
+    fontWeight: '900',
+    color: COLORS.text,
+    letterSpacing: -0.5,
+  },
+  proWelcomeSubtitle: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    marginTop: 2,
+    fontWeight: '600',
+  },
+  userAvatarBadgeGlow: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#7C3AED',
+    justifyContent: 'center',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    borderWidth: 1,
-    borderColor: COLORS.border,
+    borderWidth: 2,
+    borderColor: '#C084FC',
+    shadowColor: '#7C3AED',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  userAvatarText: {
+    color: '#FFFFFF',
+    fontSize: 19,
+    fontWeight: 'bold',
+  },
+  momentumBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
     marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 2,
   },
-  searchPlaceholder: {
-    color: COLORS.textSecondary,
-    fontSize: 14,
-  },
-  heroCard: {
-    backgroundColor: COLORS.primary,
-    borderRadius: 16,
-    padding: 20,
+  momentumItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: 6,
+  },
+  momentumText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.text,
+  },
+  momentumDivider: {
+    width: 1,
+    height: 16,
+    backgroundColor: '#E5E7EB',
+  },
+  proSearchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: COLORS.primary,
-    shadowColor: COLORS.primary,
+    borderColor: '#E5E7EB',
+    shadowColor: '#7C3AED',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 3,
   },
-  heroTextContainer: {
+  proSearchPlaceholder: {
     flex: 1,
+    color: '#9CA3AF',
+    fontSize: 14,
+    fontWeight: '500',
   },
-  heroTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: COLORS.white,
+  searchFilterBadge: {
+    padding: 6,
+    borderRadius: 8,
+    backgroundColor: '#7C3AED',
   },
-  heroSubtitle: {
-    fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.8)',
-    marginTop: 8,
+  proHeroCard: {
+    borderRadius: 22,
+    padding: 20,
+    marginBottom: 24,
+    shadowColor: '#EC4899',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
+    elevation: 9,
   },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: COLORS.text,
+  heroTopBadgeRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 12,
+  },
+  liveIndicatorChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.25)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 20,
+  },
+  liveDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: '#10B981',
+    marginRight: 6,
+  },
+  liveChipText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '900',
+    letterSpacing: 0.8,
+  },
+  heroSettingsBtn: {
+    padding: 6,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  heroPeriodTitle: {
+    fontSize: 24,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    marginBottom: 4,
+  },
+  heroPeriodSubtitle: {
+    fontSize: 13,
+    color: 'rgba(255, 255, 255, 0.9)',
+    marginBottom: 16,
+    fontWeight: '600',
+  },
+  heroProgressTrack: {
+    height: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    borderRadius: 3,
+    overflow: 'hidden',
+    marginBottom: 14,
+  },
+  heroProgressFill: {
+    height: '100%',
+    backgroundColor: '#10B981',
+    borderRadius: 3,
+  },
+  heroTimeRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  heroTimeLeftText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  heroActionChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  heroActionChipText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  quickGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginBottom: 24,
+  },
+  quickCardWrapper: {
+    width: '48%',
+    borderRadius: 18,
+    marginBottom: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  quickCardGradient: {
+    borderRadius: 18,
+    padding: 16,
+  },
+  quickIconBoxVibrant: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  quickCardTitleWhite: {
+    fontSize: 16,
+    fontWeight: '900',
+    color: '#FFFFFF',
+  },
+  quickCardSubWhite: {
+    fontSize: 11,
+    color: 'rgba(255, 255, 255, 0.85)',
+    marginTop: 2,
+    fontWeight: '600',
+  },
+  todoCountBadge: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.primary,
+    backgroundColor: '#EEF2FF',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  todoProgressBarTrack: {
+    height: 4,
+    backgroundColor: '#F3F4F6',
+    borderRadius: 2,
+    overflow: 'hidden',
+    marginBottom: 12,
+  },
+  todoProgressBarFill: {
+    height: '100%',
+    backgroundColor: '#10B981',
+    borderRadius: 2,
+  },
+  docTypeBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
   },
   sectionHeaderRow: {
     flexDirection: 'row',
@@ -1384,22 +1864,23 @@ const styles = StyleSheet.create({
   },
   fab: {
     position: 'absolute',
-    bottom: 76,
-    right: 16,
-    backgroundColor: COLORS.secondary,
+    bottom: 75,
+    right: 20,
+    backgroundColor: '#7C3AED',
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: 18,
     paddingVertical: 12,
-    borderRadius: 25,
-    shadowColor: COLORS.secondary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 5,
+    borderRadius: 30,
+    shadowColor: '#7C3AED',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
+    elevation: 8,
+    zIndex: 99,
   },
   fabLabel: {
-    fontSize: 13,
+    fontSize: 14,
     color: COLORS.white,
     fontWeight: 'bold',
   },
@@ -1435,35 +1916,38 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.card,
     borderRadius: 16,
     padding: 16,
-    marginBottom: 20,
+    marginBottom: 24,
     borderWidth: 1,
     borderColor: COLORS.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
   },
   todoInputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-    paddingBottom: 12,
+    marginBottom: 14,
   },
   todoInput: {
     flex: 1,
-    backgroundColor: COLORS.background,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    fontSize: 13,
+    backgroundColor: '#F9FAFB',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    fontSize: 14,
     color: COLORS.text,
     marginRight: 8,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: '#E5E7EB',
   },
   todoAddButton: {
-    backgroundColor: COLORS.primary,
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 9,
+    backgroundColor: '#4F46E5',
+    borderRadius: 12,
+    flexDirection: 'row',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
     justifyContent: 'center',
     alignItems: 'center',
   },

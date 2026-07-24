@@ -11,7 +11,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/theme';
-import { fetchAllMaterials } from '../helpers/sheets';
+import { fetchAllMaterials } from '../helpers/api';
 import { Material } from '../types/material';
 
 export default function ResourcesScreen() {

@@ -19,7 +19,7 @@ export default function AboutScreen() {
     <SafeAreaView style={styles.container}>
       {/* HEADER */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+        <TouchableOpacity style={styles.backButton} onPress={() => router.canGoBack() ? router.back() : router.replace('/')}>
           <Ionicons name="arrow-back" size={24} color={COLORS.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>About App</Text>
@@ -94,6 +94,28 @@ export default function AboutScreen() {
             {'\n\n'}
             Have questions, feature requests, or feedback? Contact us at:{'\n'}
             <Text style={{ fontWeight: 'bold', color: COLORS.primary }}>dakhedusolution@gmail.com</Text>
+          </Text>
+        </View>
+
+        {/* CONTRIBUTE */}
+        <View style={styles.card}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+            <Ionicons name="people" size={24} color="#10B981" style={{ marginRight: 8 }} />
+            <Text style={[styles.cardTitle, { marginBottom: 0 }]}>Contribute</Text>
+          </View>
+          <Text style={styles.cardText}>
+            We are in the first phase as students from college building this to help other students. If you want to contribute and launch more apps like this, you can contact this number through WhatsApp: <Text style={{ fontWeight: 'bold' }}>+91 8667399640</Text>
+          </Text>
+        </View>
+
+        {/* UPCOMING FEATURES */}
+        <View style={styles.card}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+            <Ionicons name="rocket" size={24} color="#F59E0B" style={{ marginRight: 8 }} />
+            <Text style={[styles.cardTitle, { marginBottom: 0 }]}>Upcoming Features</Text>
+          </View>
+          <Text style={styles.cardText}>
+            Future updates will include advanced features like AI chatbot integration, more placement materials, and off-campus company tracking powered by AI. If we reach 5K users, we will roll out these updates!
           </Text>
         </View>
 

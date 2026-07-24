@@ -1,9 +1,11 @@
-import React, { useState, Component, ErrorInfo, ReactNode } from 'react';
+import React, { useState, useEffect, Component, ErrorInfo, ReactNode } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import CustomSplashScreen from '../components/CustomSplashScreen';
+import Onboarding from '../components/Onboarding';
 
 interface Props {
   children: ReactNode;
@@ -50,18 +52,36 @@ class ErrorBoundary extends Component<Props, State> {
 
 export default function RootLayout() {
   const [isSplashVisible, setIsSplashVisible] = useState(true);
+  const [hasOnboarded, setHasOnboarded] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const checkOnboarding = async () => {
+      try {
+        const value = await AsyncStorage.getItem('hasOnboarded');
+        setHasOnboarded(value === 'true');
+      } catch (error) {
+        setHasOnboarded(false);
+      }
+    };
+    checkOnboarding();
+  }, []);
 
   return (
     <ErrorBoundary>
       <SafeAreaProvider>
         <StatusBar style="dark" />
         <View style={{ flex: 1 }}>
-          <Stack
-            screenOptions={{
-              headerShown: false,
-              animation: 'slide_from_right',
-            }}
-          />
+          {hasOnboarded === true ? (
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                animation: 'slide_from_right',
+              }}
+            />
+          ) : hasOnboarded === false ? (
+            <Onboarding onComplete={() => setHasOnboarded(true)} />
+          ) : null}
+
           {isSplashVisible && (
             <CustomSplashScreen onFinish={() => setIsSplashVisible(false)} />
           )}
