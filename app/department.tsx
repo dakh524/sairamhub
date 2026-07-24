@@ -50,13 +50,13 @@ export default function DepartmentScreen() {
       try {
         const mats = await fetchAllMaterials();
         
-        // Find all unique departments across the entire Google Sheet
+        // Find all unique departments across the entire database
         const allSheetDepts = Array.from(new Set(mats.map(m => m.dept.toUpperCase())));
         
         // Start with all our known departments so they always show up
         const finalDepts = [...KNOWN_DEPTS];
         
-        // Add any custom/new departments found in the sheet that aren't in the known list
+        // Add any custom/new departments found in the database that aren't in the known list
         allSheetDepts.forEach(code => {
           if (!finalDepts.find(d => d.code === code)) {
             finalDepts.push({ code, name: `${code} Department`, icon: 'school-outline', color: '#6B7280' });
