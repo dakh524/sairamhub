@@ -12,6 +12,7 @@ import {
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from 'expo-router';
 import { COLORS } from '../constants/theme';
 import { fetchAllMaterials, fetchAnnouncements } from '../helpers/api';
 import { Material, Announcement } from '../types/material';
@@ -32,23 +33,29 @@ export default function UpdatesScreen() {
     }));
   };
 
-  useEffect(() => {
-    async function loadData() {
-      try {
-        const [mats, anns] = await Promise.all([
-          fetchAllMaterials(),
-          fetchAnnouncements()
-        ]);
-        setMaterials(mats);
-        setAnnouncements(anns);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
+  useFocusEffect(
+    React.useCallback(() => {
+      let isActive = true;
+      async function loadData() {
+        try {
+          const [mats, anns] = await Promise.all([
+            fetchAllMaterials(),
+            fetchAnnouncements()
+          ]);
+          if (isActive) {
+            setMaterials(mats);
+            setAnnouncements(anns);
+          }
+        } catch (err) {
+          console.error(err);
+        } finally {
+          if (isActive) setLoading(false);
+        }
       }
-    }
-    loadData();
-  }, []);
+      loadData();
+      return () => { isActive = false; };
+    }, [])
+  );
 
   const filteredAnnouncements = announcements.filter((item) => {
     if (updateTab === 'all') return true;

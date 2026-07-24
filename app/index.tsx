@@ -56,45 +56,45 @@ const DEFAULT_BELL_SCHEDULE = [
 ];
 
 const MOTIVATIONAL_QUOTES = [
-  { 
-    quote: "The secret of getting ahead is getting started.", 
-    author: "Mark Twain", 
+  {
+    quote: "The secret of getting ahead is getting started.",
+    author: "Mark Twain",
     category: "Mindset",
     bg: require('../assets/images/quote_bg_1.png')
   },
-  { 
-    quote: "Success is not final, failure is not fatal: it is the courage to continue that counts.", 
-    author: "Winston Churchill", 
+  {
+    quote: "Success is not final, failure is not fatal: it is the courage to continue that counts.",
+    author: "Winston Churchill",
     category: "Perseverance",
     bg: require('../assets/images/quote_bg_2.png')
   },
-  { 
-    quote: "Small daily improvements over time lead to stunning results.", 
-    author: "Robin Sharma", 
+  {
+    quote: "Small daily improvements over time lead to stunning results.",
+    author: "Robin Sharma",
     category: "Consistency",
     bg: require('../assets/images/quote_bg_3.png')
   },
-  { 
-    quote: "Your focus determines your reality. Master your skills step by step.", 
-    author: "Sairam Hub", 
+  {
+    quote: "Your focus determines your reality. Master your skills step by step.",
+    author: "Sairam Hub",
     category: "Focus",
     bg: require('../assets/images/quote_bg_1.png')
   },
-  { 
-    quote: "The expert in anything was once a beginner. Keep learning!", 
-    author: "Helen Hayes", 
+  {
+    quote: "The expert in anything was once a beginner. Keep learning!",
+    author: "Helen Hayes",
     category: "Growth",
     bg: require('../assets/images/quote_bg_2.png')
   },
-  { 
-    quote: "Push yourself, because no one else is going to do it for you.", 
-    author: "Motivation", 
+  {
+    quote: "Push yourself, because no one else is going to do it for you.",
+    author: "Motivation",
     category: "Drive",
     bg: require('../assets/images/quote_bg_3.png')
   },
-  { 
-    quote: "Knowledge is power. Information is liberating. Education is the premise of progress.", 
-    author: "Kofi Annan", 
+  {
+    quote: "Knowledge is power. Information is liberating. Education is the premise of progress.",
+    author: "Kofi Annan",
     category: "Education",
     bg: require('../assets/images/quote_bg_1.png')
   },
@@ -154,13 +154,13 @@ export default function MainApp() {
           deviceId = 'dev_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
           await AsyncStorage.setItem('device_id', deviceId);
         }
-        
+
         // Upsert to Supabase
         await supabase.from('app_devices').upsert({
           device_id: deviceId,
           last_active: new Date().toISOString()
         }, { onConflict: 'device_id' });
-        
+
       } catch (err) {
         console.error('Failed to load user info or track device:', err);
       }
@@ -220,7 +220,7 @@ export default function MainApp() {
       const now = new Date();
       const currentMinutes = now.getHours() * 60 + now.getMinutes();
       const currentSeconds = now.getSeconds();
-      
+
       let foundCurrent = null;
       let foundNext = null;
 
@@ -231,7 +231,7 @@ export default function MainApp() {
 
         if (currentMinutes >= startTotalMins && currentMinutes < endTotalMins) {
           foundCurrent = period;
-          
+
           // Calculate progress
           const totalDurationSecs = (endTotalMins - startTotalMins) * 60;
           const elapsedSecs = ((currentMinutes - startTotalMins) * 60) + currentSeconds;
@@ -244,7 +244,7 @@ export default function MainApp() {
           const rSecs = remainingSecs % 60;
           setTimeLeftStr(`${rMins.toString().padStart(2, '0')}m ${rSecs.toString().padStart(2, '0')}s`);
           setScheduleStatus('Active');
-          
+
           // Find next
           if (i + 1 < bellSchedule.length) {
             foundNext = bellSchedule[i + 1];
@@ -254,7 +254,7 @@ export default function MainApp() {
           break;
         } else if (currentMinutes < startTotalMins) {
           if (!foundCurrent) {
-             foundNext = period;
+            foundNext = period;
           }
           break;
         }
@@ -311,7 +311,7 @@ export default function MainApp() {
     if (todo && !todo.completed) {
       confettiRef.current?.start();
     }
-    
+
     setTodoList(
       todoList.map((todo) =>
         todo.id === id ? { ...todo, completed: !todo.completed } : todo
@@ -354,7 +354,7 @@ export default function MainApp() {
 
   useEffect(() => {
     registerForPushNotificationsAsync();
-    
+
     async function loadData() {
       try {
         const [mats, anns] = await Promise.all([
@@ -368,11 +368,11 @@ export default function MainApp() {
         // Check for new notifications
         const prevAnnsCount = await AsyncStorage.getItem('anns_count');
         const prevMatsCount = await AsyncStorage.getItem('mats_count');
-        
+
         if (prevAnnsCount !== null && anns.length > parseInt(prevAnnsCount, 10)) {
           scheduleLocalNotification('📢 New Announcement!', 'Check the Updates tab for new college announcements.');
         }
-        
+
         if (prevMatsCount !== null && mats.length > parseInt(prevMatsCount, 10)) {
           scheduleLocalNotification('📚 New Study Material!', 'Fresh notes have just been uploaded to Sairam Hub.');
         }
@@ -413,9 +413,9 @@ export default function MainApp() {
         {/* Placeholder for left-balance to keep center title perfectly centered */}
         <View style={{ width: 40 }} />
         <View style={[styles.logoContainer, { height: 50, width: 160, justifyContent: 'center', alignItems: 'center' }]}>
-          <Image 
-            source={require('../assets/images/app_logo.png')} 
-            style={{ height: '100%', width: '100%', resizeMode: 'contain', transform: [{ scale: 3.0 }] }} 
+          <Image
+            source={require('../assets/images/app_logo.png')}
+            style={{ height: '100%', width: '100%', resizeMode: 'contain', transform: [{ scale: 3.0 }] }}
           />
         </View>
         <TouchableOpacity style={styles.iconButton} onPress={() => router.push('/updates')}>
@@ -449,9 +449,9 @@ export default function MainApp() {
                     </Text>
                   </View>
                   <View style={styles.userAvatarBadgeGlow}>
-                    <Image 
-                      source={{ uri: `https://api.dicebear.com/7.x/avataaars/png?seed=${encodeURIComponent(userName)}&backgroundColor=b6e3f4` }} 
-                      style={{ width: '100%', height: '100%', borderRadius: 22 }} 
+                    <Image
+                      source={{ uri: `https://api.dicebear.com/7.x/avataaars/png?seed=${encodeURIComponent(userName)}&backgroundColor=b6e3f4` }}
+                      style={{ width: '100%', height: '100%', borderRadius: 22 }}
                     />
                   </View>
                 </View>
@@ -527,8 +527,8 @@ export default function MainApp() {
                           DAILY MOTIVATION • {MOTIVATIONAL_QUOTES[quoteIndex].category.toUpperCase()}
                         </Text>
                       </View>
-                      
-                      <TouchableOpacity 
+
+                      <TouchableOpacity
                         onPress={() => setIsManageModalVisible(true)}
                         style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 16, flexDirection: 'row', alignItems: 'center', gap: 4 }}
                       >
@@ -551,7 +551,7 @@ export default function MainApp() {
                       <Text style={{ fontSize: 13, fontWeight: '700', color: 'rgba(255, 255, 255, 0.9)' }}>
                         — {MOTIVATIONAL_QUOTES[quoteIndex].author}
                       </Text>
-                      
+
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                         {MOTIVATIONAL_QUOTES.map((_, idx) => (
                           <View
@@ -572,7 +572,7 @@ export default function MainApp() {
                 {/* VIBRANT QUICK ACTIONS GRID */}
                 <Text style={styles.sectionTitle}>Quick Actions</Text>
                 <View style={styles.quickGrid}>
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={styles.quickCardWrapper}
                     onPress={() => setActiveTab('materials')}
                     activeOpacity={0.88}
@@ -591,7 +591,7 @@ export default function MainApp() {
                     </LinearGradient>
                   </TouchableOpacity>
 
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={styles.quickCardWrapper}
                     onPress={() => router.push('/career')}
                     activeOpacity={0.88}
@@ -610,7 +610,7 @@ export default function MainApp() {
                     </LinearGradient>
                   </TouchableOpacity>
 
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={styles.quickCardWrapper}
                     onPress={() => router.push('/cgpa')}
                     activeOpacity={0.88}
@@ -629,7 +629,7 @@ export default function MainApp() {
                     </LinearGradient>
                   </TouchableOpacity>
 
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={styles.quickCardWrapper}
                     onPress={() => setActiveTab('more')}
                     activeOpacity={0.88}
@@ -660,11 +660,11 @@ export default function MainApp() {
                 <View style={styles.todoContainer}>
                   {/* PROGRESS LINE */}
                   <View style={styles.todoProgressBarTrack}>
-                    <View 
+                    <View
                       style={[
-                        styles.todoProgressBarFill, 
+                        styles.todoProgressBarFill,
                         { width: `${todoList.length ? (todoList.filter(t => t.completed).length / todoList.length) * 100 : 0}%` }
-                      ]} 
+                      ]}
                     />
                   </View>
 
@@ -772,10 +772,10 @@ export default function MainApp() {
                     >
                       <View style={styles.recentUploadLeft}>
                         <View style={[styles.docTypeBadge, { backgroundColor: item.material_type?.toLowerCase().includes('pyq') ? '#FEF3C7' : '#EEF2FF' }]}>
-                          <Ionicons 
-                            name={item.material_type?.toLowerCase().includes('pyq') ? "help-circle-outline" : "document-text-outline"} 
-                            size={20} 
-                            color={item.material_type?.toLowerCase().includes('pyq') ? "#D97706" : COLORS.primary} 
+                          <Ionicons
+                            name={item.material_type?.toLowerCase().includes('pyq') ? "help-circle-outline" : "document-text-outline"}
+                            size={20}
+                            color={item.material_type?.toLowerCase().includes('pyq') ? "#D97706" : COLORS.primary}
                           />
                         </View>
                         <View style={styles.recentUploadInfo}>
@@ -802,7 +802,7 @@ export default function MainApp() {
               <View style={styles.tabContent}>
                 <Text style={styles.tabHeaderTitle}>Academic Materials</Text>
                 <Text style={styles.tabHeaderSubtitle}>Select your semester to explore resources</Text>
-                
+
                 <View style={styles.semesterGridContainer}>
                   {SEMESTER_THEMES.map((item) => (
                     <TouchableOpacity
@@ -896,7 +896,7 @@ export default function MainApp() {
             {/* TAB: CAREER HUB */}
             {activeTab === 'career' && (
               <ScrollView showsVerticalScrollIndicator={false} style={styles.tabContent}>
-                
+
                 {/* 1. HERO BANNER */}
                 <LinearGradient
                   colors={['#1E1B4B', '#4C1D95']}
@@ -906,7 +906,7 @@ export default function MainApp() {
                 >
                   <View style={{ position: 'absolute', right: -20, top: -20, width: 150, height: 150, backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 75 }} />
                   <View style={{ position: 'absolute', right: 40, bottom: -40, width: 100, height: 100, backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 50 }} />
-                  
+
                   <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: 14, fontWeight: '600', marginBottom: 8 }}>Welcome back! 👋</Text>
                   <Text style={{ color: '#FFFFFF', fontSize: 26, fontWeight: '800', marginBottom: 12, lineHeight: 32 }}>
                     Your <Text style={{ color: '#C084FC' }}>Career</Text> Journey Starts Here!
@@ -914,7 +914,7 @@ export default function MainApp() {
                   <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13, marginBottom: 24, maxWidth: '70%', lineHeight: 20 }}>
                     Top-quality resources to crack placements and competitive exams.
                   </Text>
-                  
+
 
                 </LinearGradient>
 
@@ -922,7 +922,7 @@ export default function MainApp() {
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                   <Text style={{ fontSize: 18, fontWeight: '800', color: '#111827' }}>Explore Categories</Text>
                 </View>
-                
+
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 24 }}>
                   {[
                     { title: 'Placement', title2: 'Materials', icon: 'briefcase-outline', desc1: 'Resume, HR Questions', desc2: 'Interview Prep & more', bg: '#EEF2FF', color: '#4F46E5', tint: '#E0E7FF' },
@@ -953,7 +953,7 @@ export default function MainApp() {
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                   <Text style={{ fontSize: 18, fontWeight: '800', color: '#111827' }}>Aptitude Roadmap to Clear</Text>
                 </View>
-                
+
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 32, paddingBottom: 10 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'flex-start', paddingHorizontal: 8 }}>
                     {[
@@ -988,14 +988,14 @@ export default function MainApp() {
                   {COMPANY_DRIVE_LINKS.map((item, idx) => (
                     <TouchableOpacity
                       key={item.id}
-                      style={{ 
-                        flexDirection: 'row', 
-                        alignItems: 'center', 
-                        backgroundColor: '#FFFFFF', 
-                        padding: 16, 
-                        borderRadius: 16, 
-                        marginBottom: 12, 
-                        borderWidth: 1, 
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        backgroundColor: '#FFFFFF',
+                        padding: 16,
+                        borderRadius: 16,
+                        marginBottom: 12,
+                        borderWidth: 1,
                         borderColor: '#E2E8F0',
                         shadowColor: '#000',
                         shadowOffset: { width: 0, height: 2 },
@@ -1035,7 +1035,7 @@ export default function MainApp() {
             {activeTab === 'updates' && (
               <View style={styles.tabContent}>
                 <Text style={styles.tabHeaderTitle}>Updates & Uploads</Text>
-                
+
                 {/* TAB SELECTORS */}
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[styles.announcementTabs, { marginTop: 12 }]}>
                   {(['all', 'announcements'] as const).map((t) => (
@@ -1070,14 +1070,14 @@ export default function MainApp() {
                         return '#3B82F6';
                       };
                       const themeColor = getThemeColor();
-                      
+
                       return (
                         <View
                           key={item.id}
                           style={[
                             styles.announcementCard,
-                            { 
-                              backgroundColor: '#FFFFFF', 
+                            {
+                              backgroundColor: '#FFFFFF',
                               borderWidth: 1,
                               borderColor: '#F3F4F6',
                               borderRadius: 16,
@@ -1095,7 +1095,7 @@ export default function MainApp() {
                             <View style={[
                               styles.announcementBadge,
                               {
-                                backgroundColor: themeColor + '1A', 
+                                backgroundColor: themeColor + '1A',
                                 paddingHorizontal: 10,
                                 paddingVertical: 6,
                                 borderRadius: 8,
@@ -1114,10 +1114,10 @@ export default function MainApp() {
                             </View>
                             <Text style={[styles.announcementDate, { color: '#6B7280', fontSize: 12, fontWeight: '500' }]}>{item.date}</Text>
                           </View>
-                          
+
                           <Text style={[styles.announcementTitle, { fontSize: 17, fontWeight: '800', color: '#111827', marginTop: 8, marginBottom: 6 }]}>{item.title}</Text>
                           <Text style={[styles.announcementDesc, { fontSize: 14, color: '#4B5563', lineHeight: 22 }]}>{item.details || item.desc}</Text>
-                          
+
                           <View style={{ marginTop: 16, flexDirection: 'row', justifyContent: 'flex-start' }}>
                             <TouchableOpacity
                               style={{
@@ -1144,35 +1144,35 @@ export default function MainApp() {
                 {updateTab === 'all' && (
                   <>
                     <Text style={[styles.sectionTitle, { marginTop: 12 }]}>📂 Latest Document Uploads</Text>
-                {materials.length === 0 ? (
-                  <View style={styles.emptyRecentBox}>
-                    <Text style={styles.emptyRecentText}>No uploads synced from database yet.</Text>
-                  </View>
-                ) : (
-                  materials.slice(0, 10).map((item, idx) => (
-                    <TouchableOpacity
-                      key={idx}
-                      style={styles.recentUploadCard}
-                      onPress={() => router.push({ pathname: '/detail', params: { data: JSON.stringify(item) } })}
-                    >
-                      <View style={styles.recentUploadLeft}>
-                        <Ionicons name="document-text-outline" size={22} color={COLORS.primary} style={{ marginRight: 12 }} />
-                        <View style={styles.recentUploadInfo}>
-                          <Text style={styles.recentUploadTitle} numberOfLines={1}>
-                            {item.title}
-                          </Text>
-                          <Text style={styles.recentUploadSubtitle}>
-                            {item.dept} • Sem {item.sem} • {item.material_type}
-                          </Text>
-                        </View>
+                    {materials.length === 0 ? (
+                      <View style={styles.emptyRecentBox}>
+                        <Text style={styles.emptyRecentText}>No uploads synced from database yet.</Text>
                       </View>
-                      <View style={styles.recentUploadRight}>
-                        <Text style={styles.recentDate}>{item.date}</Text>
-                        <Text style={styles.recentContributor}>By {item.contributor_name}</Text>
-                      </View>
-                    </TouchableOpacity>
-                  ))
-                )}
+                    ) : (
+                      materials.slice(0, 10).map((item, idx) => (
+                        <TouchableOpacity
+                          key={idx}
+                          style={styles.recentUploadCard}
+                          onPress={() => router.push({ pathname: '/detail', params: { data: JSON.stringify(item) } })}
+                        >
+                          <View style={styles.recentUploadLeft}>
+                            <Ionicons name="document-text-outline" size={22} color={COLORS.primary} style={{ marginRight: 12 }} />
+                            <View style={styles.recentUploadInfo}>
+                              <Text style={styles.recentUploadTitle} numberOfLines={1}>
+                                {item.title}
+                              </Text>
+                              <Text style={styles.recentUploadSubtitle}>
+                                {item.dept} • Sem {item.sem} • {item.material_type}
+                              </Text>
+                            </View>
+                          </View>
+                          <View style={styles.recentUploadRight}>
+                            <Text style={styles.recentDate}>{item.date}</Text>
+                            <Text style={styles.recentContributor}>By {item.contributor_name}</Text>
+                          </View>
+                        </TouchableOpacity>
+                      ))
+                    )}
                   </>
                 )}
               </View>
@@ -1183,7 +1183,7 @@ export default function MainApp() {
               <View style={styles.tabContent}>
                 <Text style={styles.tabHeaderTitle}>More Features</Text>
                 <Text style={styles.tabHeaderSubtitle}>Explore extra tools and utilities</Text>
-                
+
                 {/* BELL SCHEDULE COMPONENT */}
                 <View style={styles.bellScheduleCard}>
                   <View style={styles.bellHeaderRow}>
@@ -1207,7 +1207,7 @@ export default function MainApp() {
                         {currentPeriod ? currentPeriod.name : (scheduleStatus === 'After College' ? 'College Over' : 'Waiting...')}
                       </Text>
                     </View>
-                    
+
                     <View style={{ flex: 1.5, alignItems: 'center', justifyContent: 'center' }}>
                       <Text style={[styles.bellTimeLeft, { fontSize: 24, color: '#EF4444', fontWeight: '900', textAlign: 'center' }]}>
                         {timeLeftStr}
@@ -1233,7 +1233,7 @@ export default function MainApp() {
                 </View>
 
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginTop: 20 }}>
-                  
+
                   {/* CGPA CALCULATOR CARD */}
                   <TouchableOpacity style={[styles.featureGridCard, { backgroundColor: '#F0FDF4', borderColor: '#DCFCE7' }]} onPress={() => router.push('/cgpa')}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -1288,27 +1288,27 @@ export default function MainApp() {
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 }}>
                   {/* Notes */}
                   <TouchableOpacity style={[styles.featureGridCard, { backgroundColor: '#F5F3FF', borderColor: '#EDE9FE', marginBottom: 0 }]} activeOpacity={0.9}>
-                    <View style={{flexDirection: 'row', alignItems: 'center'}}>
-                        <View style={[styles.featureIconBadge, { backgroundColor: '#EDE9FE', marginBottom: 0, marginRight: 12 }]}>
-                          <Ionicons name="document-text" size={20} color="#6D28D9" />
-                        </View>
-                        <View style={{flex: 1}}>
-                          <Text style={styles.featureGridTitle}>Notes</Text>
-                          <Text style={styles.featureGridDesc}>View and share study materials</Text>
-                        </View>
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <View style={[styles.featureIconBadge, { backgroundColor: '#EDE9FE', marginBottom: 0, marginRight: 12 }]}>
+                        <Ionicons name="document-text" size={20} color="#6D28D9" />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.featureGridTitle}>Notes</Text>
+                        <Text style={styles.featureGridDesc}>View and share study materials</Text>
+                      </View>
                     </View>
                   </TouchableOpacity>
 
                   {/* Study Groups */}
                   <TouchableOpacity style={[styles.featureGridCard, { backgroundColor: '#FEFCE8', borderColor: '#FEF08A', marginBottom: 0 }]} activeOpacity={0.9}>
-                    <View style={{flexDirection: 'row', alignItems: 'center'}}>
-                        <View style={[styles.featureIconBadge, { backgroundColor: '#FEF08A', marginBottom: 0, marginRight: 12 }]}>
-                          <Ionicons name="people" size={20} color="#CA8A04" />
-                        </View>
-                        <View style={{flex: 1}}>
-                          <Text style={styles.featureGridTitle}>Study Groups</Text>
-                          <Text style={styles.featureGridDesc}>Connect and study together</Text>
-                        </View>
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <View style={[styles.featureIconBadge, { backgroundColor: '#FEF08A', marginBottom: 0, marginRight: 12 }]}>
+                        <Ionicons name="people" size={20} color="#CA8A04" />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.featureGridTitle}>Study Groups</Text>
+                        <Text style={styles.featureGridDesc}>Connect and study together</Text>
+                      </View>
                     </View>
                   </TouchableOpacity>
                 </View>
@@ -1327,7 +1327,7 @@ export default function MainApp() {
                 <Text style={styles.tabHeaderSubtitle}>Mini-games to play with friends</Text>
 
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginTop: 20, paddingBottom: 40 }}>
-                  
+
                   {/* LUCKY DRAW */}
                   <TouchableOpacity style={styles.gameCard} onPress={() => router.push('/lucky-draw')}>
                     <View style={[styles.gameIconBox, { backgroundColor: '#8B5CF6' }]}>
@@ -1367,8 +1367,8 @@ export default function MainApp() {
                 </View>
 
                 {/* ABOUT APP BUTTON */}
-                <TouchableOpacity 
-                  style={[styles.bellScheduleCard, { marginTop: 10, marginBottom: 40, backgroundColor: COLORS.primary }]} 
+                <TouchableOpacity
+                  style={[styles.bellScheduleCard, { marginTop: 10, marginBottom: 40, backgroundColor: COLORS.primary }]}
                   onPress={() => router.push('/about')}
                   activeOpacity={0.9}
                 >
@@ -1406,7 +1406,7 @@ export default function MainApp() {
                   <View>
                     <Text style={{ fontWeight: 'bold', fontSize: 16 }}>{p.name}</Text>
                     <Text style={{ color: COLORS.textSecondary }}>
-                      {`${p.startH.toString().padStart(2,'0')}:${p.startM.toString().padStart(2,'0')} - ${p.endH.toString().padStart(2,'0')}:${p.endM.toString().padStart(2,'0')}`}
+                      {`${p.startH.toString().padStart(2, '0')}:${p.startM.toString().padStart(2, '0')} - ${p.endH.toString().padStart(2, '0')}:${p.endM.toString().padStart(2, '0')}`}
                     </Text>
                   </View>
                   <TouchableOpacity onPress={() => deletePeriod(i)} style={{ padding: 8, backgroundColor: '#FEE2E2', borderRadius: 8 }}>
@@ -1414,17 +1414,17 @@ export default function MainApp() {
                   </TouchableOpacity>
                 </View>
               ))}
-              
+
               <View style={styles.modalAddContainer}>
                 <Text style={{ fontWeight: 'bold', marginBottom: 12 }}>Add New Period</Text>
-                <TextInput placeholder="Period Name (e.g. Period 1, Lunch)" style={styles.modalInput} value={newPeriod.name} onChangeText={(t: string) => setNewPeriod({...newPeriod, name: t})} />
+                <TextInput placeholder="Period Name (e.g. Period 1, Lunch)" style={styles.modalInput} value={newPeriod.name} onChangeText={(t: string) => setNewPeriod({ ...newPeriod, name: t })} />
                 <View style={{ flexDirection: 'row', gap: 8 }}>
-                  <TextInput placeholder="Start H (24hr)" style={[styles.modalInput, { flex: 1 }]} keyboardType="numeric" value={newPeriod.startH} onChangeText={(t: string) => setNewPeriod({...newPeriod, startH: t})} />
-                  <TextInput placeholder="Start M" style={[styles.modalInput, { flex: 1 }]} keyboardType="numeric" value={newPeriod.startM} onChangeText={(t: string) => setNewPeriod({...newPeriod, startM: t})} />
+                  <TextInput placeholder="Start H (24hr)" style={[styles.modalInput, { flex: 1 }]} keyboardType="numeric" value={newPeriod.startH} onChangeText={(t: string) => setNewPeriod({ ...newPeriod, startH: t })} />
+                  <TextInput placeholder="Start M" style={[styles.modalInput, { flex: 1 }]} keyboardType="numeric" value={newPeriod.startM} onChangeText={(t: string) => setNewPeriod({ ...newPeriod, startM: t })} />
                 </View>
                 <View style={{ flexDirection: 'row', gap: 8 }}>
-                  <TextInput placeholder="End H (24hr)" style={[styles.modalInput, { flex: 1 }]} keyboardType="numeric" value={newPeriod.endH} onChangeText={(t: string) => setNewPeriod({...newPeriod, endH: t})} />
-                  <TextInput placeholder="End M" style={[styles.modalInput, { flex: 1 }]} keyboardType="numeric" value={newPeriod.endM} onChangeText={(t: string) => setNewPeriod({...newPeriod, endM: t})} />
+                  <TextInput placeholder="End H (24hr)" style={[styles.modalInput, { flex: 1 }]} keyboardType="numeric" value={newPeriod.endH} onChangeText={(t: string) => setNewPeriod({ ...newPeriod, endH: t })} />
+                  <TextInput placeholder="End M" style={[styles.modalInput, { flex: 1 }]} keyboardType="numeric" value={newPeriod.endM} onChangeText={(t: string) => setNewPeriod({ ...newPeriod, endM: t })} />
                 </View>
                 <TouchableOpacity onPress={addPeriod} style={styles.modalAddBtn}>
                   <Text style={{ color: COLORS.white, fontWeight: 'bold' }}>+ Add to Schedule</Text>
