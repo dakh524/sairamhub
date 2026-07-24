@@ -229,18 +229,31 @@ export default function AdminScreen() {
   };
 
   const handleDeleteAnnouncement = async (id: string) => {
-    Alert.alert('Confirm Delete', 'Are you sure you want to delete this announcement?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: async () => {
-          const success = await deleteAnnouncement(id);
-          if (success) {
-            Alert.alert('Success', 'Announcement deleted.');
-            fetchAdminAnns();
-          } else {
-            Alert.alert('Error', 'Failed to delete announcement.');
-          }
-      }}
-    ]);
+    if (Platform.OS === 'web') {
+      const confirmed = window.confirm('Are you sure you want to delete this announcement?');
+      if (confirmed) {
+        const success = await deleteAnnouncement(id);
+        if (success) {
+          setTimeout(() => window.alert('Announcement deleted.'), 100);
+          fetchAdminAnns();
+        } else {
+          setTimeout(() => window.alert('Failed to delete announcement.'), 100);
+        }
+      }
+    } else {
+      Alert.alert('Confirm Delete', 'Are you sure you want to delete this announcement?', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Delete', style: 'destructive', onPress: async () => {
+            const success = await deleteAnnouncement(id);
+            if (success) {
+              Alert.alert('Success', 'Announcement deleted.');
+              fetchAdminAnns();
+            } else {
+              Alert.alert('Error', 'Failed to delete announcement.');
+            }
+        }}
+      ]);
+    }
   };
 
   const handleUpdateAnnouncement = async () => {
