@@ -54,6 +54,16 @@ const DEFAULT_BELL_SCHEDULE = [
   { name: 'Period 7', startH: 14, startM: 40, endH: 15, endM: 30, isBreak: false },
 ];
 
+const MOTIVATIONAL_QUOTES = [
+  { quote: "The secret of getting ahead is getting started.", author: "Mark Twain", category: "Mindset" },
+  { quote: "Success is not final, failure is not fatal: it is the courage to continue that counts.", author: "Winston Churchill", category: "Perseverance" },
+  { quote: "Small daily improvements over time lead to stunning results.", author: "Robin Sharma", category: "Consistency" },
+  { quote: "Your focus determines your reality. Master your skills step by step.", author: "Sairam Hub", category: "Focus" },
+  { quote: "The expert in anything was once a beginner. Keep learning!", author: "Helen Hayes", category: "Growth" },
+  { quote: "Push yourself, because no one else is going to do it for you.", author: "Motivation", category: "Drive" },
+  { quote: "Knowledge is power. Information is liberating. Education is the premise of progress.", author: "Kofi Annan", category: "Education" },
+];
+
 export default function MainApp() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'home' | 'materials' | 'career' | 'updates' | 'more'>('home');
@@ -62,6 +72,14 @@ export default function MainApp() {
   const [loading, setLoading] = useState<boolean>(true);
   const [serverError, setServerError] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [quoteIndex, setQuoteIndex] = useState<number>(0);
+
+  useEffect(() => {
+    const quoteTimer = setInterval(() => {
+      setQuoteIndex((prev) => (prev + 1) % MOTIVATIONAL_QUOTES.length);
+    }, 6000);
+    return () => clearInterval(quoteTimer);
+  }, []);
 
   // Confetti ref
   const confettiRef = React.useRef<ConfettiCannon>(null);
@@ -368,10 +386,6 @@ export default function MainApp() {
                 {/* ENERGETIC WELCOME GREETING */}
                 <View style={styles.proWelcomeRow}>
                   <View style={{ flex: 1 }}>
-                    <View style={styles.streakBadgeRow}>
-                      <Text style={styles.streakBadgeText}>🔥 5 DAY STREAK</Text>
-                      <Text style={styles.levelBadgeText}>⚡ LVL 4 HERO</Text>
-                    </View>
                     <Text style={styles.proWelcomeTitle}>Let's Crush It, {userName}! 🚀</Text>
                     <Text style={styles.proWelcomeSubtitle}>
                       {userDept ? `${userDept} Department • ` : ''}Sairam Hub Learning Portal
@@ -712,23 +726,62 @@ export default function MainApp() {
                   ))}
                 </View>
 
-                {/* MATERIALS BANNER */}
-                <View style={{ marginTop: 24, marginBottom: 90 }}>
-                  <ImageBackground 
-                    source={require('../assets/images/materials_banner.jpg')} 
-                    style={[styles.heroCard, { padding: 16, height: 130, borderWidth: 0, flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'center', marginBottom: 0 }]}
-                    imageStyle={{ borderRadius: 16, resizeMode: 'cover' }}
+                {/* DYNAMIC MOTIVATIONAL QUOTES BANNER */}
+                <TouchableOpacity
+                  style={{ marginTop: 24, marginBottom: 90 }}
+                  onPress={() => setQuoteIndex((prev) => (prev + 1) % MOTIVATIONAL_QUOTES.length)}
+                  activeOpacity={0.9}
+                >
+                  <LinearGradient
+                    colors={['#4F46E5', '#7C3AED', '#EC4899']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={{
+                      padding: 20,
+                      borderRadius: 20,
+                      shadowColor: '#7C3AED',
+                      shadowOffset: { width: 0, height: 6 },
+                      shadowOpacity: 0.25,
+                      shadowRadius: 12,
+                      elevation: 5,
+                    }}
                   >
-                    <View style={{ width: '70%', backgroundColor: 'rgba(255, 255, 255, 0.9)', padding: 10, borderRadius: 10 }}>
-                      <Text style={{ fontSize: 14, fontWeight: 'bold', color: COLORS.text, marginBottom: 2 }}>
-                        Sairam Hub
-                      </Text>
-                      <Text style={{ fontSize: 12, color: COLORS.textSecondary, lineHeight: 16 }}>
-                        Student searching study material in Sairam Hub
-                      </Text>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255, 255, 255, 0.2)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 }}>
+                        <Ionicons name="sparkles" size={14} color="#FDE047" style={{ marginRight: 6 }} />
+                        <Text style={{ color: '#FFFFFF', fontSize: 11, fontWeight: '700', letterSpacing: 0.5 }}>
+                          DAILY MOTIVATION • {MOTIVATIONAL_QUOTES[quoteIndex].category.toUpperCase()}
+                        </Text>
+                      </View>
+                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <Ionicons name="refresh-circle" size={22} color="rgba(255,255,255,0.85)" />
+                      </View>
                     </View>
-                  </ImageBackground>
-                </View>
+
+                    <Text style={{ fontSize: 15, fontWeight: '600', color: '#FFFFFF', lineHeight: 22, fontStyle: 'italic', marginBottom: 12 }}>
+                      "{MOTIVATIONAL_QUOTES[quoteIndex].quote}"
+                    </Text>
+
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Text style={{ fontSize: 12, fontWeight: '700', color: 'rgba(255, 255, 255, 0.9)' }}>
+                        — {MOTIVATIONAL_QUOTES[quoteIndex].author}
+                      </Text>
+                      <View style={{ flexDirection: 'row', gap: 5, alignItems: 'center' }}>
+                        {MOTIVATIONAL_QUOTES.map((_, idx) => (
+                          <View
+                            key={idx}
+                            style={{
+                              width: idx === quoteIndex ? 14 : 6,
+                              height: 6,
+                              borderRadius: 3,
+                              backgroundColor: idx === quoteIndex ? '#FDE047' : 'rgba(255, 255, 255, 0.35)',
+                            }}
+                          />
+                        ))}
+                      </View>
+                    </View>
+                  </LinearGradient>
+                </TouchableOpacity>
 
 
               </View>
