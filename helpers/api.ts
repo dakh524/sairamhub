@@ -371,3 +371,39 @@ export async function getAppStats(): Promise<{ totalUsers: number; totalMaterial
     return { totalUsers: 0, totalMaterials: 0, totalDrives: 0 };
   }
 }
+
+/**
+ * ADMIN: Delete an announcement
+ */
+export async function deleteAnnouncement(id: string): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('announcements')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+    return true;
+  } catch (err) {
+    console.error('Failed to delete announcement:', err);
+    return false;
+  }
+}
+
+/**
+ * ADMIN: Update an announcement
+ */
+export async function updateAnnouncement(id: string, updates: any): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('announcements')
+      .update(updates)
+      .eq('id', id);
+
+    if (error) throw error;
+    return true;
+  } catch (err) {
+    console.error('Failed to update announcement:', err);
+    return false;
+  }
+}

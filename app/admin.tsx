@@ -17,7 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/theme';
 import { supabase } from '../helpers/supabase';
-import { deleteMaterial, updateMaterial, addCareerVideo, getAppStats, fetchAllMaterials } from '../helpers/api';
+import { deleteMaterial, updateMaterial, addCareerVideo, getAppStats, fetchAllMaterials, fetchAnnouncements, deleteAnnouncement, updateAnnouncement } from '../helpers/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Material } from '../types/material';
 
@@ -50,11 +50,20 @@ export default function AdminScreen() {
   const [editSubmitting, setEditSubmitting] = useState(false);
 
   // --- TAB 3: ANNOUNCEMENT STATES ---
+  const [adminAnns, setAdminAnns] = useState<any[]>([]);
+  const [annsLoading, setAnnsLoading] = useState(false);
   const [annTitle, setAnnTitle] = useState('');
   const [annDesc, setAnnDesc] = useState('');
   const [annDetails, setAnnDetails] = useState('');
   const [annLink, setAnnLink] = useState('');
   const [annSubmitting, setAnnSubmitting] = useState(false);
+
+  const [editingAnn, setEditingAnn] = useState<any | null>(null);
+  const [editAnnTitle, setEditAnnTitle] = useState('');
+  const [editAnnDesc, setEditAnnDesc] = useState('');
+  const [editAnnDetails, setEditAnnDetails] = useState('');
+  const [editAnnLink, setEditAnnLink] = useState('');
+  const [editAnnSubmitting, setEditAnnSubmitting] = useState(false);
 
   // --- TAB 4: CAREER STATES ---
   // Drive Form
@@ -78,6 +87,7 @@ export default function AdminScreen() {
     if (isAuthenticated) {
       if (activeTab === 'overview') fetchStats();
       if (activeTab === 'materials') fetchMats();
+      if (activeTab === 'announcements') fetchAdminAnns();
     }
   }, [activeTab, isAuthenticated]);
 
@@ -93,6 +103,14 @@ export default function AdminScreen() {
     const data = await fetchAllMaterials();
     setMaterials(data);
     setMatsLoading(false);
+  };
+
+  const fetchAdminAnns = async () => {
+    setAnnsLoading(true);
+    const data = await fetchAnnouncements();
+    // Only show DB announcements (not local optimistic ones) to allow real editing
+    setAdminAnns(data.filter((a: any) => !String(a.id).startsWith('local_')));
+    setAnnsLoading(false);
   };
 
   // -------------------------------------------------------------
@@ -198,6 +216,7 @@ export default function AdminScreen() {
 
       setTimeout(() => {
         Alert.alert('Success', 'Announcement posted globally!');
+        fetchAdminAnns(); // Refresh list
       }, 100);
       setAnnTitle(''); setAnnDesc(''); setAnnDetails(''); setAnnLink('');
     } catch (err: any) {
@@ -205,6 +224,43 @@ export default function AdminScreen() {
     } finally {
       setAnnSubmitting(false);
     }
+  };
+
+  const handleDeleteAnnouncement = async (id: string) => {
+    Alert.alert('Confirm Delete', 'Are you sure you want to delete this announcement?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: async () => {
+          const success = await deleteAnnouncement(id);
+          if (success) {
+            Alert.alert('Success', 'Announcement deleted.');
+            fetchAdminAnns();
+          } else {
+            Alert.alert('Error', 'Failed to delete announcement.');
+          }
+      }}
+    ]);
+  };
+
+  const handleUpdateAnnouncement = async () => {
+    if (!editingAnn) return;
+    setEditAnnSubmitting(true);
+    
+    const updates = {
+      title: editAnnTitle,
+      "desc": editAnnDesc,
+      details: editAnnDetails || editAnnDesc,
+      link: editAnnLink || null,
+    };
+
+    const success = await updateAnnouncement(editingAnn.id, updates);
+    if (success) {
+      Alert.alert('Success', 'Announcement updated successfully.');
+      setEditingAnn(null);
+      fetchAdminAnns();
+    } else {
+      Alert.alert('Error', 'Failed to update announcement.');
+    }
+    setEditAnnSubmitting(false);
   };
 
   const handleAddDrive = async () => {
@@ -476,6 +532,78 @@ export default function AdminScreen() {
                   {annSubmitting ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.submitBtnText}>Broadcast Alert</Text>}
                 </TouchableOpacity>
               </View>
+
+              <Text style={[styles.sectionTitle, { marginTop: 24 }]}>Manage Announcements</Text>
+              {annsLoading ? (
+                <ActivityIndicator size="large" color={COLORS.primary} style={{ marginTop: 20 }} />
+              ) : adminAnns.length === 0 ? (
+                <Text style={{ color: '#64748B' }}>No global announcements yet.</Text>
+              ) : (
+                adminAnns.map((ann, i) => (
+                  <View key={i} style={styles.matCard}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontWeight: 'bold', fontSize: 16, color: '#1E293B', marginBottom: 4 }}>{ann.title}</Text>
+                      <Text style={{ fontSize: 12, color: '#64748B' }} numberOfLines={1}>{ann.desc}</Text>
+                    </View>
+                    <View style={{ flexDirection: 'row', gap: 8 }}>
+                      <TouchableOpacity 
+                        style={[styles.deleteBtn, { backgroundColor: '#EEF2FF' }]}
+                        onPress={() => {
+                          setEditingAnn(ann);
+                          setEditAnnTitle(ann.title);
+                          setEditAnnDesc(ann.desc);
+                          setEditAnnDetails(ann.details);
+                          setEditAnnLink(ann.link || '');
+                        }}
+                      >
+                        <Ionicons name="pencil-outline" size={18} color="#4F46E5" />
+                      </TouchableOpacity>
+                      <TouchableOpacity 
+                        style={styles.deleteBtn}
+                        onPress={() => handleDeleteAnnouncement(ann.id)}
+                      >
+                        <Ionicons name="trash-outline" size={18} color="#EF4444" />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                ))
+              )}
+
+              {/* Edit Announcement Modal */}
+              <Modal visible={!!editingAnn} transparent animationType="slide">
+                <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 }}>
+                  <View style={{ backgroundColor: '#FFF', borderRadius: 20, padding: 20 }}>
+                    <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 16 }}>Edit Announcement</Text>
+                    
+                    <View style={styles.inputGroup}>
+                      <Text style={styles.label}>Title</Text>
+                      <TextInput style={styles.input} value={editAnnTitle} onChangeText={setEditAnnTitle} />
+                    </View>
+                    <View style={styles.inputGroup}>
+                      <Text style={styles.label}>Short Description</Text>
+                      <TextInput style={styles.input} value={editAnnDesc} onChangeText={setEditAnnDesc} />
+                    </View>
+                    <View style={styles.inputGroup}>
+                      <Text style={styles.label}>Details / Body</Text>
+                      <TextInput style={[styles.input, { height: 80 }]} multiline value={editAnnDetails} onChangeText={setEditAnnDetails} />
+                    </View>
+                    <View style={styles.inputGroup}>
+                      <Text style={styles.label}>Action Link</Text>
+                      <TextInput style={styles.input} value={editAnnLink} onChangeText={setEditAnnLink} autoCapitalize="none" />
+                    </View>
+
+                    <View style={{ flexDirection: 'row', gap: 12, marginTop: 10 }}>
+                      <TouchableOpacity style={{ flex: 1, padding: 14, backgroundColor: '#F1F5F9', borderRadius: 12, alignItems: 'center' }} onPress={() => setEditingAnn(null)}>
+                        <Text style={{ fontWeight: 'bold', color: '#64748B' }}>Cancel</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity style={{ flex: 1, padding: 14, backgroundColor: '#6B5DF6', borderRadius: 12, alignItems: 'center' }} onPress={handleUpdateAnnouncement} disabled={editAnnSubmitting}>
+                        {editAnnSubmitting ? <ActivityIndicator color="#FFF" /> : <Text style={{ fontWeight: 'bold', color: '#FFF' }}>Save Changes</Text>}
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </View>
+              </Modal>
+
             </View>
           )}
 
