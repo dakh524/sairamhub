@@ -11,10 +11,9 @@ import {
   Dimensions,
   Share,
   Alert,
-  Image,
-  ImageBackground,
   Modal,
 } from 'react-native';
+import { Image, ImageBackground } from 'expo-image';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -60,43 +59,43 @@ const MOTIVATIONAL_QUOTES = [
     quote: "The secret of getting ahead is getting started.",
     author: "Mark Twain",
     category: "Mindset",
-    bg: require('../assets/images/quote_bg_1.png')
+    bg: require('../assets/images/quote_bg_1.jpg')
   },
   {
     quote: "Success is not final, failure is not fatal: it is the courage to continue that counts.",
     author: "Winston Churchill",
     category: "Perseverance",
-    bg: require('../assets/images/quote_bg_2.png')
+    bg: require('../assets/images/quote_bg_2.jpg')
   },
   {
     quote: "Small daily improvements over time lead to stunning results.",
     author: "Robin Sharma",
     category: "Consistency",
-    bg: require('../assets/images/quote_bg_3.png')
+    bg: require('../assets/images/quote_bg_3.jpg')
   },
   {
     quote: "Your focus determines your reality. Master your skills step by step.",
     author: "Sairam Hub",
     category: "Focus",
-    bg: require('../assets/images/quote_bg_1.png')
+    bg: require('../assets/images/quote_bg_1.jpg')
   },
   {
     quote: "The expert in anything was once a beginner. Keep learning!",
     author: "Helen Hayes",
     category: "Growth",
-    bg: require('../assets/images/quote_bg_2.png')
+    bg: require('../assets/images/quote_bg_2.jpg')
   },
   {
     quote: "Push yourself, because no one else is going to do it for you.",
     author: "Motivation",
     category: "Drive",
-    bg: require('../assets/images/quote_bg_3.png')
+    bg: require('../assets/images/quote_bg_3.jpg')
   },
   {
     quote: "Knowledge is power. Information is liberating. Education is the premise of progress.",
     author: "Kofi Annan",
     category: "Education",
-    bg: require('../assets/images/quote_bg_1.png')
+    bg: require('../assets/images/quote_bg_1.jpg')
   },
 ];
 
@@ -432,9 +431,26 @@ export default function MainApp() {
             <Text style={{ fontSize: 14, color: COLORS.textSecondary, textAlign: 'center', paddingHorizontal: 40 }}>We are currently updating our database. Please check back shortly.</Text>
           </View>
         ) : loading ? (
-          <View style={styles.loaderContainer}>
-            <ActivityIndicator size="large" color={COLORS.primary} />
-            <Text style={styles.loadingText}>Syncing Resources...</Text>
+          <View style={{ padding: 16 }}>
+            {/* Skeleton Welcome Row */}
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
+              <View style={{ width: '70%', height: 36, backgroundColor: '#E5E7EB', borderRadius: 8 }} />
+              <View style={{ width: 50, height: 50, backgroundColor: '#E5E7EB', borderRadius: 25 }} />
+            </View>
+            <View style={{ width: '45%', height: 20, backgroundColor: '#E5E7EB', borderRadius: 6, marginBottom: 24 }} />
+
+            {/* Skeleton Momentum Bar */}
+            <View style={{ width: '100%', height: 65, backgroundColor: '#E5E7EB', borderRadius: 12, marginBottom: 20 }} />
+
+            {/* Skeleton Hero Card */}
+            <View style={{ width: '100%', height: 180, backgroundColor: '#E5E7EB', borderRadius: 24, marginBottom: 24 }} />
+
+            {/* Skeleton Quick Actions */}
+            <View style={{ width: '40%', height: 24, backgroundColor: '#E5E7EB', borderRadius: 6, marginBottom: 16 }} />
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+              <View style={{ width: '48%', height: 120, backgroundColor: '#E5E7EB', borderRadius: 20 }} />
+              <View style={{ width: '48%', height: 120, backgroundColor: '#E5E7EB', borderRadius: 20 }} />
+            </View>
           </View>
         ) : (
           <ScrollView showsVerticalScrollIndicator={false}>

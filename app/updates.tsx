@@ -8,6 +8,7 @@ import {
   Share,
   Alert,
   ActivityIndicator,
+  FlatList,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -83,40 +84,56 @@ export default function UpdatesScreen() {
       </View>
 
       {loading ? (
-        <View style={styles.loaderContainer}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
-          <Text style={styles.loadingText}>Syncing updates...</Text>
+        <View style={{ padding: 16 }}>
+          {/* Skeleton Tabs */}
+          <View style={{ flexDirection: 'row', gap: 12, marginBottom: 20 }}>
+            <View style={{ width: 120, height: 40, backgroundColor: '#E5E7EB', borderRadius: 20 }} />
+            <View style={{ width: 140, height: 40, backgroundColor: '#E5E7EB', borderRadius: 20 }} />
+          </View>
+          {/* Skeleton List Items */}
+          {[1, 2, 3].map(i => (
+            <View key={i} style={{ width: '100%', height: 160, backgroundColor: '#E5E7EB', borderRadius: 16, marginBottom: 16 }} />
+          ))}
         </View>
       ) : (
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-          {/* TAB SELECTORS */}
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[styles.announcementTabs, { marginTop: 12 }]}>
-            {(['all', 'announcements'] as const).map((t) => (
-              <TouchableOpacity
-                key={t}
-                style={[
-                  styles.announcementTabItem,
-                  updateTab === t && styles.announcementTabItemActive,
-                ]}
-                onPress={() => setUpdateTab(t)}
-              >
-                <Text
+        <View style={{ flex: 1 }}>
+          {/* TAB SELECTORS - Fixed at top */}
+          <View style={{ paddingHorizontal: 16 }}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[styles.announcementTabs, { marginTop: 12, marginBottom: 12 }]}>
+              {(['all', 'announcements'] as const).map((t) => (
+                <TouchableOpacity
+                  key={t}
                   style={[
-                    styles.announcementTabLabel,
-                    updateTab === t && styles.announcementTabLabelActive,
+                    styles.announcementTabItem,
+                    updateTab === t && styles.announcementTabItemActive,
                   ]}
+                  onPress={() => setUpdateTab(t)}
                 >
-                  {t === 'all' ? 'ALL MATERIALS' : t.toUpperCase()}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
+                  <Text
+                    style={[
+                      styles.announcementTabLabel,
+                      updateTab === t && styles.announcementTabLabelActive,
+                    ]}
+                  >
+                    {t === 'all' ? 'ALL MATERIALS' : t.toUpperCase()}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
 
           {/* ANNOUNCEMENTS CONTENT */}
           {updateTab === 'announcements' && (
-            <>
-              <Text style={[styles.sectionTitle, { marginTop: 12, marginBottom: 12 }]}>📢 Announcements</Text>
-              {announcements.filter(a => a.type === 'announcements').map((item) => {
+            <FlatList
+              data={announcements.filter(a => a.type === 'announcements')}
+              keyExtractor={(item) => item.id || Math.random().toString()}
+              contentContainerStyle={styles.scrollContent}
+              showsVerticalScrollIndicator={false}
+              initialNumToRender={5}
+              maxToRenderPerBatch={5}
+              windowSize={5}
+              ListHeaderComponent={<Text style={[styles.sectionTitle, { marginBottom: 12 }]}>📢 Announcements</Text>}
+              renderItem={({ item }) => {
                 const getThemeColor = () => {
                   if (item.type === 'workshops') return '#8B5CF6';
                   if (item.title.toLowerCase().includes('important')) return '#EF4444';
@@ -126,7 +143,6 @@ export default function UpdatesScreen() {
                 
                 return (
                   <View
-                    key={item.id}
                     style={[
                       styles.announcementCard,
                       { 
@@ -207,46 +223,51 @@ export default function UpdatesScreen() {
                     </View>
                   </View>
                 );
-              })}
-            </>
+              }}
+            />
           )}
 
           {/* MATERIALS CONTENT */}
           {updateTab === 'all' && (
-            <>
-              <Text style={[styles.sectionTitle, { marginTop: 12 }]}>📂 Latest Document Uploads</Text>
-          {materials.length === 0 ? (
-            <View style={styles.emptyUploadBox}>
-              <Text style={styles.emptyUploadText}>No recent document uploads found in database.</Text>
-            </View>
-          ) : (
-            materials.slice(0, 10).map((item, idx) => (
-              <TouchableOpacity
-                key={idx}
-                style={styles.recentUploadCard}
-                onPress={() => router.push({ pathname: '/detail', params: { data: JSON.stringify(item) } })}
-              >
-                <View style={styles.recentUploadLeft}>
-                  <Ionicons name="document-text-outline" size={22} color={COLORS.primary} style={{ marginRight: 12 }} />
-                  <View style={styles.recentUploadInfo}>
-                    <Text style={styles.recentUploadTitle} numberOfLines={1}>
-                      {item.title}
-                    </Text>
-                    <Text style={styles.recentUploadSubtitle}>
-                      {item.dept} • Sem {item.sem} • {item.material_type}
-                    </Text>
+            <FlatList
+              data={materials.slice(0, 10)}
+              keyExtractor={(item, idx) => item.id ? item.id.toString() : idx.toString()}
+              contentContainerStyle={styles.scrollContent}
+              showsVerticalScrollIndicator={false}
+              initialNumToRender={5}
+              maxToRenderPerBatch={5}
+              windowSize={5}
+              ListHeaderComponent={<Text style={[styles.sectionTitle, { marginBottom: 12 }]}>📂 Latest Document Uploads</Text>}
+              ListEmptyComponent={
+                <View style={styles.emptyUploadBox}>
+                  <Text style={styles.emptyUploadText}>No recent document uploads found in database.</Text>
+                </View>
+              }
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={styles.recentUploadCard}
+                  onPress={() => router.push({ pathname: '/detail', params: { data: JSON.stringify(item) } })}
+                >
+                  <View style={styles.recentUploadLeft}>
+                    <Ionicons name="document-text-outline" size={22} color={COLORS.primary} style={{ marginRight: 12 }} />
+                    <View style={styles.recentUploadInfo}>
+                      <Text style={styles.recentUploadTitle} numberOfLines={1}>
+                        {item.title}
+                      </Text>
+                      <Text style={styles.recentUploadSubtitle}>
+                        {item.dept} • Sem {item.sem} • {item.material_type}
+                      </Text>
+                    </View>
                   </View>
-                </View>
-                <View style={styles.recentUploadRight}>
-                  <Text style={styles.recentDate}>{item.date}</Text>
-                  <Text style={styles.recentContributor}>By {item.contributor_name}</Text>
-                </View>
-              </TouchableOpacity>
-            ))
+                  <View style={styles.recentUploadRight}>
+                    <Text style={styles.recentDate}>{item.date}</Text>
+                    <Text style={styles.recentContributor}>By {item.contributor_name}</Text>
+                  </View>
+                </TouchableOpacity>
+              )}
+            />
           )}
-            </>
-          )}
-        </ScrollView>
+        </View>
       )}
     </SafeAreaView>
   );

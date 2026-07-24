@@ -3,9 +3,9 @@ import {
   StyleSheet,
   Text,
   View,
-  ScrollView,
   TouchableOpacity,
   ActivityIndicator,
+  FlatList,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -98,7 +98,7 @@ export default function DepartmentScreen() {
         <View style={styles.placeholder} />
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+      <View style={styles.scrollContent}>
         <Text style={styles.subHeader}>
           Semester {sem} • Select your branch
         </Text>
@@ -111,28 +111,35 @@ export default function DepartmentScreen() {
             <Text style={{ color: COLORS.textSecondary, marginTop: 12 }}>No departments found for Semester {sem}</Text>
           </View>
         ) : (
-          departments.map((dept) => (
-            <TouchableOpacity
-              key={dept.code}
-              style={styles.card}
-              onPress={() => handleDeptPress(dept.code)}
-            >
-              <View style={styles.cardLeft}>
-                <View style={[styles.iconBadge, { backgroundColor: dept.color + '15' }]}>
-                  <Ionicons name={dept.icon as any} size={20} color={dept.color} />
+          <FlatList
+            data={departments}
+            keyExtractor={(item) => item.code}
+            showsVerticalScrollIndicator={false}
+            initialNumToRender={10}
+            maxToRenderPerBatch={10}
+            windowSize={5}
+            renderItem={({ item: dept }) => (
+              <TouchableOpacity
+                style={styles.card}
+                onPress={() => handleDeptPress(dept.code)}
+              >
+                <View style={styles.cardLeft}>
+                  <View style={[styles.iconBadge, { backgroundColor: dept.color + '15' }]}>
+                    <Ionicons name={dept.icon as any} size={20} color={dept.color} />
+                  </View>
+                  <View style={styles.textContainer}>
+                    <Text style={styles.deptCode}>{dept.code}</Text>
+                    <Text style={styles.deptName} numberOfLines={1}>
+                      {dept.name}
+                    </Text>
+                  </View>
                 </View>
-                <View style={styles.textContainer}>
-                  <Text style={styles.deptCode}>{dept.code}</Text>
-                  <Text style={styles.deptName} numberOfLines={1}>
-                    {dept.name}
-                  </Text>
-                </View>
-              </View>
-              <Ionicons name="chevron-forward" size={16} color={COLORS.textSecondary} />
-            </TouchableOpacity>
-          ))
+                <Ionicons name="chevron-forward" size={16} color={COLORS.textSecondary} />
+              </TouchableOpacity>
+            )}
+          />
         )}
-      </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }

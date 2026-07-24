@@ -5,7 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // In-memory cache
 let cachedMaterials: Material[] | null = null;
 let cacheExpiry: number = 0;
-const CACHE_DURATION_MS = 0; // Disabled cache for live testing
+const CACHE_DURATION_MS = 5 * 60 * 1000; // 5 minutes cache for production
 
 // Helper to normalize semester strings (e.g. "FIRST SEM" -> "1")
 function normalizeSemester(sem: string): string {
@@ -55,6 +55,19 @@ export async function fetchAllMaterials(): Promise<Material[]> {
   }
 
   try {
+    // 1. Try to load from offline cache first if in-memory is empty
+    if (!cachedMaterials) {
+      try {
+        const offlineData = await AsyncStorage.getItem('offline_materials');
+        if (offlineData) {
+          cachedMaterials = JSON.parse(offlineData);
+          // Don't set expiry, let it fetch in background or next time
+        }
+      } catch (e) {
+        console.warn('Offline cache read error', e);
+      }
+    }
+
     // Query both Supabase tables in parallel
     const [matsRes, sharedRes] = await Promise.all([
       supabase.from('materials').select('*'),
@@ -143,7 +156,10 @@ export async function fetchAllMaterials(): Promise<Material[]> {
     const combined = Array.from(uniqueMap.values());
 
     cachedMaterials = combined;
-    cacheExpiry = now + CACHE_DURATION_MS;
+    cacheExpiry = Date.now() + CACHE_DURATION_MS;
+
+    // Save for offline
+    AsyncStorage.setItem('offline_materials', JSON.stringify(combined)).catch(() => {});
 
     return combined;
   } catch (error) {
@@ -171,6 +187,12 @@ export function getSubjectMaterials(
 
 export async function fetchAnnouncements(): Promise<any[]> {
   try {
+    let offlineData: any[] = [];
+    try {
+      const rawOffline = await AsyncStorage.getItem('offline_announcements');
+      if (rawOffline) offlineData = JSON.parse(rawOffline);
+    } catch (e) {}
+
     const { data, error } = await supabase
       .from('announcements')
       .select('*');
@@ -196,9 +218,12 @@ export async function fetchAnnouncements(): Promise<any[]> {
       console.warn('Error reading local_announcements:', e);
     }
 
-    const merged = [...dbAnnouncements, ...localAnnouncements];
+    const merged = [...offlineData, ...dbAnnouncements, ...localAnnouncements];
     const uniqueAnns = Array.from(new Map(merged.map(a => [a.title + a.date, a])).values());
     
+    // Save for offline
+    AsyncStorage.setItem('offline_announcements', JSON.stringify(uniqueAnns)).catch(() => {});
+
     return uniqueAnns;
   } catch (error) {
     console.warn('Warning fetching announcements:', error);

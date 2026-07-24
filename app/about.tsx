@@ -5,8 +5,8 @@ import {
   View,
   ScrollView,
   TouchableOpacity,
-  Image,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -104,7 +104,7 @@ export default function AboutScreen() {
             <Text style={[styles.cardTitle, { marginBottom: 0 }]}>Contribute</Text>
           </View>
           <Text style={styles.cardText}>
-            We are in the first phase as students from college building this to help other students. If you want to contribute and launch more apps like this, you can contact this number through WhatsApp: <Text style={{ fontWeight: 'bold' }}>+91 8667399640</Text>
+            We are in the first phase as students from college building this to help other students. If you want to contribute and launch more apps like this, you can contact this number through WhatsApp: <Text style={{ fontWeight: 'bold' }}>+91 877 831 7180</Text> or join our team by mailing us at <Text style={{ fontWeight: 'bold', color: COLORS.primary }}>dakhedusolution@gmail.com</Text>.
           </Text>
         </View>
 
