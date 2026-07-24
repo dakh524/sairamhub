@@ -17,7 +17,7 @@ import { COLORS } from '../constants/theme';
 import { fetchAllMaterials } from '../helpers/api';
 import { Material } from '../types/material';
 
-const getTypeStyle = (typeStr: string) => {
+const getTypeStyle = (typeStr: string): { colors: readonly [string, string]; icon: string; badgeBg: string; badgeText: string } => {
   const t = (typeStr || '').toLowerCase();
   if (t.includes('note')) return { colors: ['#3B82F6', '#1D4ED8'], icon: 'document-text-outline', badgeBg: '#EFF6FF', badgeText: '#1D4ED8' };
   if (t.includes('question') || t.includes('bank') || t.includes('qb')) return { colors: ['#10B981', '#047857'], icon: 'help-buoy-outline', badgeBg: '#ECFDF5', badgeText: '#047857' };
