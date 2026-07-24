@@ -55,13 +55,48 @@ const DEFAULT_BELL_SCHEDULE = [
 ];
 
 const MOTIVATIONAL_QUOTES = [
-  { quote: "The secret of getting ahead is getting started.", author: "Mark Twain", category: "Mindset" },
-  { quote: "Success is not final, failure is not fatal: it is the courage to continue that counts.", author: "Winston Churchill", category: "Perseverance" },
-  { quote: "Small daily improvements over time lead to stunning results.", author: "Robin Sharma", category: "Consistency" },
-  { quote: "Your focus determines your reality. Master your skills step by step.", author: "Sairam Hub", category: "Focus" },
-  { quote: "The expert in anything was once a beginner. Keep learning!", author: "Helen Hayes", category: "Growth" },
-  { quote: "Push yourself, because no one else is going to do it for you.", author: "Motivation", category: "Drive" },
-  { quote: "Knowledge is power. Information is liberating. Education is the premise of progress.", author: "Kofi Annan", category: "Education" },
+  { 
+    quote: "The secret of getting ahead is getting started.", 
+    author: "Mark Twain", 
+    category: "Mindset",
+    bg: require('../assets/images/quote_bg_1.png')
+  },
+  { 
+    quote: "Success is not final, failure is not fatal: it is the courage to continue that counts.", 
+    author: "Winston Churchill", 
+    category: "Perseverance",
+    bg: require('../assets/images/quote_bg_2.png')
+  },
+  { 
+    quote: "Small daily improvements over time lead to stunning results.", 
+    author: "Robin Sharma", 
+    category: "Consistency",
+    bg: require('../assets/images/quote_bg_3.png')
+  },
+  { 
+    quote: "Your focus determines your reality. Master your skills step by step.", 
+    author: "Sairam Hub", 
+    category: "Focus",
+    bg: require('../assets/images/quote_bg_1.png')
+  },
+  { 
+    quote: "The expert in anything was once a beginner. Keep learning!", 
+    author: "Helen Hayes", 
+    category: "Growth",
+    bg: require('../assets/images/quote_bg_2.png')
+  },
+  { 
+    quote: "Push yourself, because no one else is going to do it for you.", 
+    author: "Motivation", 
+    category: "Drive",
+    bg: require('../assets/images/quote_bg_3.png')
+  },
+  { 
+    quote: "Knowledge is power. Information is liberating. Education is the premise of progress.", 
+    author: "Kofi Annan", 
+    category: "Education",
+    bg: require('../assets/images/quote_bg_1.png')
+  },
 ];
 
 export default function MainApp() {
@@ -427,49 +462,87 @@ export default function MainApp() {
                   </View>
                 </TouchableOpacity>
 
-                {/* VIBRANT HERO BANNER - LIVE CLASS TRACKER */}
-                <LinearGradient
-                  colors={['#8B5CF6', '#EC4899', '#3B82F6']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.proHeroCard}
+                {/* PREMIERE GEMINI MOTIVATIONAL HERO CARD */}
+                <TouchableOpacity
+                  activeOpacity={0.92}
+                  onPress={() => setQuoteIndex((prev) => (prev + 1) % MOTIVATIONAL_QUOTES.length)}
+                  style={{ marginBottom: 20 }}
                 >
-                  <View style={styles.heroTopBadgeRow}>
-                    <View style={styles.liveIndicatorChip}>
-                      <View style={styles.liveDot} />
-                      <Text style={styles.liveChipText}>IN SESSION</Text>
+                  <ImageBackground
+                    source={MOTIVATIONAL_QUOTES[quoteIndex].bg}
+                    style={{
+                      width: '100%',
+                      minHeight: 180,
+                      borderRadius: 24,
+                      overflow: 'hidden',
+                      padding: 20,
+                      justifyContent: 'space-between',
+                      shadowColor: '#4F46E5',
+                      shadowOffset: { width: 0, height: 10 },
+                      shadowOpacity: 0.35,
+                      shadowRadius: 15,
+                      elevation: 8,
+                    }}
+                    imageStyle={{ borderRadius: 24, resizeMode: 'cover' }}
+                  >
+                    {/* DARK GLASSMORPHISM OVERLAY */}
+                    <LinearGradient
+                      colors={['rgba(15, 23, 42, 0.65)', 'rgba(30, 27, 75, 0.85)']}
+                      style={{
+                        ...StyleSheet.absoluteFillObject,
+                        borderRadius: 24,
+                      }}
+                    />
+
+                    {/* TOP BADGE ROW */}
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', zIndex: 2 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255, 255, 255, 0.2)', paddingHorizontal: 12, paddingVertical: 5, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.3)' }}>
+                        <Ionicons name="sparkles" size={14} color="#FDE047" style={{ marginRight: 6 }} />
+                        <Text style={{ color: '#FFFFFF', fontSize: 11, fontWeight: '800', letterSpacing: 0.5 }}>
+                          DAILY MOTIVATION • {MOTIVATIONAL_QUOTES[quoteIndex].category.toUpperCase()}
+                        </Text>
+                      </View>
+                      
+                      <TouchableOpacity 
+                        onPress={() => setIsManageModalVisible(true)}
+                        style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 16, flexDirection: 'row', alignItems: 'center', gap: 4 }}
+                      >
+                        <Ionicons name="time" size={14} color="#FFFFFF" />
+                        <Text style={{ color: '#FFFFFF', fontSize: 11, fontWeight: '700' }}>
+                          {currentPeriod ? currentPeriod.name : 'Schedule'}
+                        </Text>
+                      </TouchableOpacity>
                     </View>
-                    <TouchableOpacity onPress={() => setIsManageModalVisible(true)} style={styles.heroSettingsBtn}>
-                      <Ionicons name="time" size={18} color="#FFFFFF" />
-                    </TouchableOpacity>
-                  </View>
 
-                  <Text style={styles.heroPeriodTitle}>
-                    {currentPeriod ? currentPeriod.name : 'No Active Class'}
-                  </Text>
-                  
-                  <Text style={styles.heroPeriodSubtitle}>
-                    {currentPeriod 
-                      ? `${currentPeriod.startH.toString().padStart(2,'0')}:${currentPeriod.startM.toString().padStart(2,'0')} - ${currentPeriod.endH.toString().padStart(2,'0')}:${currentPeriod.endM.toString().padStart(2,'0')}`
-                      : nextPeriod ? `Next: ${nextPeriod.name}` : 'Enjoy your break! 🔥'}
-                  </Text>
+                    {/* CENTER QUOTE TEXT */}
+                    <View style={{ marginVertical: 14, zIndex: 2 }}>
+                      <Text style={{ fontSize: 17, fontWeight: '700', color: '#FFFFFF', lineHeight: 25, fontStyle: 'italic', textShadowColor: 'rgba(0, 0, 0, 0.5)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4 }}>
+                        "{MOTIVATIONAL_QUOTES[quoteIndex].quote}"
+                      </Text>
+                    </View>
 
-                  {/* PROGRESS BAR */}
-                  <View style={styles.heroProgressTrack}>
-                    <View style={[styles.heroProgressFill, { width: `${bellProgressPct}%` }]} />
-                  </View>
-
-                  <View style={styles.heroTimeRow}>
-                    <Text style={styles.heroTimeLeftText}>{timeLeftStr}</Text>
-                    <TouchableOpacity 
-                      style={styles.heroActionChip}
-                      onPress={() => router.push('/share')}
-                    >
-                      <Ionicons name="cloud-upload" size={15} color="#FFFFFF" style={{ marginRight: 4 }} />
-                      <Text style={styles.heroActionChipText}>+ Share Notes</Text>
-                    </TouchableOpacity>
-                  </View>
-                </LinearGradient>
+                    {/* BOTTOM AUTHOR & SLIDE DOTS ROW */}
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', zIndex: 2 }}>
+                      <Text style={{ fontSize: 13, fontWeight: '700', color: 'rgba(255, 255, 255, 0.9)' }}>
+                        — {MOTIVATIONAL_QUOTES[quoteIndex].author}
+                      </Text>
+                      
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        {MOTIVATIONAL_QUOTES.map((_, idx) => (
+                          <View
+                            key={idx}
+                            style={{
+                              width: idx === quoteIndex ? 16 : 6,
+                              height: 6,
+                              borderRadius: 3,
+                              backgroundColor: idx === quoteIndex ? '#FDE047' : 'rgba(255, 255, 255, 0.35)',
+                            }}
+                          />
+                        ))}
+                      </View>
+                    </View>
+                  </ImageBackground>
+                </TouchableOpacity>
 
                 {/* VIBRANT QUICK ACTIONS GRID */}
                 <Text style={styles.sectionTitle}>Quick Actions</Text>
@@ -726,30 +799,38 @@ export default function MainApp() {
                   ))}
                 </View>
 
-                {/* DYNAMIC MOTIVATIONAL QUOTES BANNER */}
+                {/* DYNAMIC MOTIVATIONAL QUOTES BANNER WITH GEMINI AI ART */}
                 <TouchableOpacity
                   style={{ marginTop: 24, marginBottom: 90 }}
                   onPress={() => setQuoteIndex((prev) => (prev + 1) % MOTIVATIONAL_QUOTES.length)}
                   activeOpacity={0.9}
                 >
-                  <LinearGradient
-                    colors={['#4F46E5', '#7C3AED', '#EC4899']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
+                  <ImageBackground
+                    source={MOTIVATIONAL_QUOTES[quoteIndex].bg}
                     style={{
                       padding: 20,
-                      borderRadius: 20,
+                      borderRadius: 22,
+                      overflow: 'hidden',
                       shadowColor: '#7C3AED',
-                      shadowOffset: { width: 0, height: 6 },
-                      shadowOpacity: 0.25,
-                      shadowRadius: 12,
-                      elevation: 5,
+                      shadowOffset: { width: 0, height: 8 },
+                      shadowOpacity: 0.3,
+                      shadowRadius: 14,
+                      elevation: 6,
                     }}
+                    imageStyle={{ borderRadius: 22, resizeMode: 'cover' }}
                   >
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255, 255, 255, 0.2)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 }}>
+                    <LinearGradient
+                      colors={['rgba(15, 23, 42, 0.6)', 'rgba(88, 28, 135, 0.85)']}
+                      style={{
+                        ...StyleSheet.absoluteFillObject,
+                        borderRadius: 22,
+                      }}
+                    />
+
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, zIndex: 2 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255, 255, 255, 0.2)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.25)' }}>
                         <Ionicons name="sparkles" size={14} color="#FDE047" style={{ marginRight: 6 }} />
-                        <Text style={{ color: '#FFFFFF', fontSize: 11, fontWeight: '700', letterSpacing: 0.5 }}>
+                        <Text style={{ color: '#FFFFFF', fontSize: 11, fontWeight: '800', letterSpacing: 0.5 }}>
                           DAILY MOTIVATION • {MOTIVATIONAL_QUOTES[quoteIndex].category.toUpperCase()}
                         </Text>
                       </View>
@@ -758,11 +839,11 @@ export default function MainApp() {
                       </View>
                     </View>
 
-                    <Text style={{ fontSize: 15, fontWeight: '600', color: '#FFFFFF', lineHeight: 22, fontStyle: 'italic', marginBottom: 12 }}>
+                    <Text style={{ fontSize: 15, fontWeight: '600', color: '#FFFFFF', lineHeight: 23, fontStyle: 'italic', marginBottom: 12, zIndex: 2 }}>
                       "{MOTIVATIONAL_QUOTES[quoteIndex].quote}"
                     </Text>
 
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', zIndex: 2 }}>
                       <Text style={{ fontSize: 12, fontWeight: '700', color: 'rgba(255, 255, 255, 0.9)' }}>
                         — {MOTIVATIONAL_QUOTES[quoteIndex].author}
                       </Text>
@@ -780,7 +861,7 @@ export default function MainApp() {
                         ))}
                       </View>
                     </View>
-                  </LinearGradient>
+                  </ImageBackground>
                 </TouchableOpacity>
 
 
